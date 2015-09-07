@@ -1,0 +1,48 @@
+// Changes made to commonfiles to make lab0 run on windows with glew and mingw using makefile with c++
+
+// MicroGlut for Windows
+// Errors
+1. Define UNICODE for the project to make MicroGlut CreateWindow work, also added L before static "" text.
+2. Add -lgdi32 to compilation flags
+
+// Warnings 
+1. const added to char* function parameters
+2. Commented sdepth in EnableOpenGL
+3. Commented main, quit and theta in WinMain
+4. Commented timeStart before glutInit
+
+
+
+// GL_Utilities
+// Errors
+1. mallocs should be preceded by (FBOstruct*)
+
+
+
+// VectorUtils
+// Errors
+1. vec3 default constructor (vec3()) non existant
+2. vec4 default constructor (vec4()) non existant
+
+// Warnings
+1. Extra ; on final line (-pedantic)
+
+
+
+// LoadTGA
+// Errors
+1. malloc for buffer should be preceded by (unsigned char*) and also set as type for buffer in funtion SaveFramebufferToTGA
+
+// Warnings
+1. const added to char* function parameters
+2. added unsigned to w,h, b, row and rowLimit definition in LoadTGATextureData and removed (int) in loop on line 178.
+3. Unused variables: type, row and bytesPerPixel commented along with set code.
+
+
+
+// loadobj
+// Errors
+1. All mallocs should be preceded by (type *)
+
+// Warnings
+1. const added to char* function parameters
