@@ -16,12 +16,12 @@
 	#include "MicroGlut.h"
 	// uses framework Cocoa
 #else
-	#ifdef WIN32
+	#ifdef _WIN32
 // MS
 		#include <windows.h>
 		#include <stdio.h>
-		#include <GL/glew.h>
-		#include <GL/glut.h>
+		#include "glew.h"
+		#include "freeglut.h"
 	#else
 // Linux
 		#include <stdio.h>
@@ -82,8 +82,8 @@ void init(void)
 	printError("GL inits");
 
 	// Load and compile shaders
-	plaintextureshader = loadShaders("plaintextureshader.vert", "plaintextureshader.frag");  // puts texture on teapot
-	phongshader = loadShaders("phong.vert", "phong.frag");  // renders with light (used for initial renderin of teapot)
+	plaintextureshader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/plaintextureshader.frag");  // puts texture on teapot
+	phongshader = loadShaders("lab1-1/shd/phong.vert", "lab1-1/shd/phong.frag");  // renders with light (used for initial renderin of teapot)
 
 	printError("init shader");
 
@@ -92,7 +92,7 @@ void init(void)
 
 	// load the model
 //	model1 = LoadModelPlus("teapot.obj");
-	model1 = LoadModelPlus("stanford-bunny.obj");
+	model1 = LoadModelPlus("lab1-1/obj/stanford-bunny.obj");
 
 	squareModel = LoadDataToModel(
 			square, NULL, squareTexCoord, NULL,
@@ -196,6 +196,11 @@ int main(int argc, char *argv[])
 	glutReshapeFunc(reshape);
 	glutIdleFunc(idle);
 
+	#ifdef _WIN32
+		glewExperimental = GL_TRUE; 
+		glewInit();
+	#endif
+	
 	init();
 	glutMainLoop();
 	exit(0);

@@ -61,7 +61,7 @@ void EnableOpenGL(HWND hWnd, HDC * hDC, HGLRC * hRC)
 {
 	PIXELFORMATDESCRIPTOR pfd;
 	int format;
-	int zdepth;// sdepth;
+	int zdepth, sdepth;
 #if defined WGL_CONTEXT_MAJOR_VERSION_ARB
 // NOT tested because WGL_CONTEXT_MAJOR_VERSION_ARB is undefined on my computer
 	int attribs[] =
@@ -79,12 +79,11 @@ void EnableOpenGL(HWND hWnd, HDC * hDC, HGLRC * hRC)
 		zdepth = 32;
 	else
 		zdepth = 0;
-	/* Needed ????
+
 	if (gContextInitMode & GLUT_STENCIL)
 		sdepth = 32;
 	else
 		sdepth = 0;
-	*/
 	
 	// set the pixel format for the DC
 	// MUCH OF THIS SHOULD BE OPTIONAL (like depth and stencil above)!
@@ -146,7 +145,7 @@ void glutPostRedisplay()
 //MGApplication *myApp;
 //NSView *view;
 //NSWindow *window;
-//static struct timeval timeStart;
+static struct timeval timeStart;
 
 void glutInit(int *argcp, char **argv)
 {
@@ -395,8 +394,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	HDC hDC = NULL;
 	HGLRC hRC = NULL;
 //	MSG msg;
-	//BOOL quit = FALSE;
-	//float theta = 0.0f;
+	BOOL quit = FALSE;
+	float theta = 0.0f;
 	
 	// register window class
 	wc.style = CS_OWNDC;
@@ -411,7 +410,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	wc.lpszClassName = L"GLSample";
 	RegisterClass( &wc );
 	
-	//main(); ???
+	main();
 	
 	// shutdown OpenGL
 	DisableOpenGL( hWnd, hDC, hRC );
