@@ -32,7 +32,7 @@ LAB12=Lab1-2/lab1-2.cc
 #Output location
 BIN=bin
 
-all: wlab12
+all: wlab11
 
 lab0: $(LAB0)
 	$(CXX) $(CPPFLAGS) -o $(BIN)/lab0 $(LAB0) $(LUTILS) $(FLAGS) $(LFLAG) $(LINC)

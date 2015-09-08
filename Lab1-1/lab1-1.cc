@@ -36,6 +36,8 @@
 #include "loadobj.h"
 #include "zpr.h"
 
+#include <iostream>
+
 // initial width and heights
 #define W 512
 #define H 512
@@ -65,8 +67,9 @@ Model* squareModel;
 //----------------------Globals-------------------------------------------------
 Point3D cam, point;
 Model *model1;
-FBOstruct *fbo1, *fbo2;
+FBOstruct *fbo1, *fbo2, *fbo3;
 GLuint phongshader = 0, plaintextureshader = 0;
+GLuint xLPfiltershader = 0, yLPfiltershader = 0, clampshader = 0, bloomingshader = 0;
 
 //-------------------------------------------------------------------------------------
 
@@ -83,12 +86,17 @@ void init(void)
 
 	// Load and compile shaders
 	plaintextureshader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/plaintextureshader.frag");  // puts texture on teapot
+	xLPfiltershader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/xLPfiltershader.frag");
+	yLPfiltershader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/yLPfiltershader.frag");
+	clampshader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/clampshader.frag");
+	bloomingshader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/bloomingshader.frag");
 	phongshader = loadShaders("lab1-1/shd/phong.vert", "lab1-1/shd/phong.frag");  // renders with light (used for initial renderin of teapot)
 
 	printError("init shader");
 
 	fbo1 = initFBO(W, H, 0);
 	fbo2 = initFBO(W, H, 0);
+	fbo3 = initFBO(W, H, 0);
 
 	// load the model
 //	model1 = LoadModelPlus("teapot.obj");
@@ -112,6 +120,37 @@ void OnTimer(int value)
 	glutTimerFunc(5, &OnTimer, value);
 }
 
+
+void filterLP(int passes)
+{
+	for(int i = 0; i < passes; i++)
+	{
+		// Filter X
+		useFBO(fbo2, fbo1, 0L);
+		glClearColor(0.0, 0.0, 0.0, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		glUseProgram(xLPfiltershader);
+		
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		
+		DrawModel(squareModel, xLPfiltershader, "in_Position", NULL, "in_TexCoord");
+		
+		// Filter Y
+		useFBO(fbo1, fbo2, 0L);
+		glClearColor(0.0, 0.0, 0.0, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		glUseProgram(yLPfiltershader);
+
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		
+		DrawModel(squareModel, yLPfiltershader, "in_Position", NULL, "in_TexCoord");
+	}
+}
+
 //-------------------------------callback functions------------------------------------------
 void display(void)
 {
@@ -122,7 +161,7 @@ void display(void)
 	//  function will get called several times per second
 
 	// render to fbo1!
-	useFBO(fbo1, 0L, 0L);
+	useFBO(fbo3, 0L, 0L);
 
 	// Clear framebuffer & zbuffer
 	glClearColor(0.1, 0.1, 0.3, 0);
@@ -150,18 +189,37 @@ void display(void)
 	DrawModel(model1, phongshader, "in_Position", "in_Normal", NULL);
 
 	// Done rendering the FBO! Set up for rendering on screen, using the result as texture!
+	
+	// Clamp
+	useFBO(fbo1, fbo3, 0L);
+	glClearColor(0.0, 0.0, 0.0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	glUseProgram(clampshader);
 
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	
+	DrawModel(squareModel, clampshader, "in_Position", NULL, "in_TexCoord");
+	
+	// LP the clamped values
+	filterLP(20);
+	
+	// Add together
+	
 //	glFlush(); // Can cause flickering on some systems. Can also be necessary to make drawing complete.
-	useFBO(0L, fbo1, 0L);
+	useFBO(0L, fbo1, fbo3);
+
 	glClearColor(0.0, 0.0, 0.0, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Activate second shader program
-	glUseProgram(plaintextureshader);
-
+	glUseProgram(bloomingshader);
+	glUniform1i(glGetUniformLocation(bloomingshader, "bloomingTex"), 0);
+	glUniform1i(glGetUniformLocation(bloomingshader, "originalTex"), 1);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_DEPTH_TEST);
-	DrawModel(squareModel, plaintextureshader, "in_Position", NULL, "in_TexCoord");
+	DrawModel(squareModel, bloomingshader, "in_Position", NULL, "in_TexCoord");
 
 	glutSwapBuffers();
 }
