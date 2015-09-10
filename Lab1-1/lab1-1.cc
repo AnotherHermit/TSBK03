@@ -203,7 +203,7 @@ void display(void)
 	DrawModel(squareModel, clampshader, "in_Position", NULL, "in_TexCoord");
 	
 	// LP the clamped values
-	filterLP(20);
+	filterLP(40);
 	
 	// Add together
 	
