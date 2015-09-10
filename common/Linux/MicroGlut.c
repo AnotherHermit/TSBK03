@@ -298,7 +298,7 @@ make_window( Display *dpy, const char *name,
    *ctxRet = ctx;
 }
 
-void glutCreateWindow(char *windowTitle)
+void glutCreateWindow(const char *windowTitle)
 {
    dpy = XOpenDisplay(NULL);
    if (!dpy)
@@ -374,7 +374,7 @@ void glutMainLoop()
          switch (event.type)
          {
          	case ClientMessage:
-         		if (event.xclient.data.l[0] == wmDeleteMessage) // quit!
+         		if (event.xclient.data.l[0] == (int)wmDeleteMessage) // quit!
          			done = 1;
 	         	break;
          	case Expose: 
@@ -614,7 +614,7 @@ void glutPositionWindow(int x, int y)
 {
 	XMoveWindow(dpy, win, x, y);
 }
-void glutSetWindowTitle(char *title)
+void glutSetWindowTitle(const char *title)
 {
 	XStoreName(dpy, win, title);
 }

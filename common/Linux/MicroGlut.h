@@ -27,7 +27,7 @@ void glutMotionFunc(void (*func)(int x, int y));
 
 void glutInitWindowPosition (int x, int y);
 void glutInitWindowSize (int width, int height);
-void glutCreateWindow (char *windowTitle);
+void glutCreateWindow (const char *windowTitle);
 
 void glutSwapBuffers();
 
@@ -52,7 +52,7 @@ char glutMouseIsDown(unsigned char c);
 void glutWarpPointer( int x, int y );
 void glutReshapeWindow(int width, int height);
 void glutPositionWindow(int x, int y);
-void glutSetWindowTitle(char *title);
+void glutSetWindowTitle(const char *title);
 void glutInitContextVersion(int major, int minor);
 
 void glutFullScreen();
