@@ -21,18 +21,19 @@ COM=common
 LINC= -I$(COM) -I$(COM)/Linux
 WINC= -I$(COM) -I$(COM)/Windows
 
-UTILS=$(COM)/GL_utilities.c $(COM)/VectorUtils3.c $(COM)/LoadTGA.c $(COM)/loadobj.c $(COM)/zpr.c
+UTILS=$(COM)/*.c
 LUTILS=$(COM)/Linux/MicroGlut.c $(UTILS)
 
 # Input files
 LAB0=Lab0/lab0.cc
 LAB11=Lab1-1/lab1-1.cc
 LAB12=Lab1-2/lab1-2.cc
+LAB2=Lab2/skinning.c
 
 #Output location
 BIN=bin
 
-all: wlab12
+all: wlab2
 
 lab0: $(LAB0)
 	$(CXX) $(CPPFLAGS) -o $(BIN)/lab0 $(LAB0) $(LUTILS) $(FLAGS) $(LFLAG) $(LINC)
@@ -51,6 +52,12 @@ lab12: $(LAB11)
 
 wlab12: $(LAB12)
 	$(CXX) $(CPPFLAGS) -o $(BIN)/lab12 $(LAB12) $(UTILS) $(FLAGS) $(WFLAG) $(WINC)
+	
+lab2: $(LAB2)
+	$(CXX) $(CPPFLAGS) -o $(BIN)/lab2 $(LAB2) $(LUTILS) $(FLAGS) $(LFLAG) $(LINC)
+
+wlab2: $(LAB2)
+	$(CXX) $(CPPFLAGS) -o $(BIN)/lab2 $(LAB2) $(UTILS) $(FLAGS) $(WFLAG) $(WINC)
 	
 clean :
 	@ $(RM) $(BIN)/lab*
