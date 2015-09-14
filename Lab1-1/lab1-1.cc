@@ -85,12 +85,12 @@ void init(void)
 	printError("GL inits");
 
 	// Load and compile shaders
-	plaintextureshader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/plaintextureshader.frag");  // puts texture on teapot
-	xLPfiltershader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/xLPfiltershader.frag");
-	yLPfiltershader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/yLPfiltershader.frag");
-	clampshader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/clampshader.frag");
-	bloomingshader = loadShaders("lab1-1/shd/plaintextureshader.vert", "lab1-1/shd/bloomingshader.frag");
-	phongshader = loadShaders("lab1-1/shd/phong.vert", "lab1-1/shd/phong.frag");  // renders with light (used for initial renderin of teapot)
+	plaintextureshader = loadShaders("Lab1-1/shd/plaintextureshader.vert", "Lab1-1/shd/plaintextureshader.frag");  // puts texture on teapot
+	xLPfiltershader = loadShaders("Lab1-1/shd/plaintextureshader.vert", "Lab1-1/shd/xLPfiltershader.frag");
+	yLPfiltershader = loadShaders("Lab1-1/shd/plaintextureshader.vert", "Lab1-1/shd/yLPfiltershader.frag");
+	clampshader = loadShaders("Lab1-1/shd/plaintextureshader.vert", "Lab1-1/shd/clampshader.frag");
+	bloomingshader = loadShaders("Lab1-1/shd/plaintextureshader.vert", "Lab1-1/shd/bloomingshader.frag");
+	phongshader = loadShaders("Lab1-1/shd/phong.vert", "Lab1-1/shd/phong.frag");  // renders with light (used for initial renderin of teapot)
 
 	printError("init shader");
 
@@ -100,7 +100,7 @@ void init(void)
 
 	// load the model
 //	model1 = LoadModelPlus("teapot.obj");
-	model1 = LoadModelPlus("lab1-1/obj/stanford-bunny.obj");
+	model1 = LoadModelPlus("Lab1-1/obj/stanford-bunny.obj");
 
 	squareModel = LoadDataToModel(
 			square, NULL, squareTexCoord, NULL,
@@ -203,7 +203,7 @@ void display(void)
 	DrawModel(squareModel, clampshader, "in_Position", NULL, "in_TexCoord");
 	
 	// LP the clamped values
-	filterLP(20);
+	filterLP(40);
 	
 	// Add together
 	

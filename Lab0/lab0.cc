@@ -62,15 +62,15 @@ void init(void)
 	viewMatrix = lookAt(0,0,1.5, 0,0,0, 0,1,0);
 
 	// Load and compile shader
-	program = loadShaders("lab0/shd/lab0.vert", "lab0/shd/lab0.frag");
+	program = loadShaders("Lab0/shd/lab0.vert", "Lab0/shd/lab0.frag");
 	printError("init shader");
 	
 	// Upload geometry to the GPU:
-	bunny = LoadModelPlus("lab0/obj/stanford-bunny.obj");
+	bunny = LoadModelPlus("Lab0/obj/stanford-bunny.obj");
 	printError("load models");
 
 	// Load textures
-	LoadTGATextureSimple("lab0/tex/maskros512.tga",&texture);
+	LoadTGATextureSimple("Lab0/tex/maskros512.tga",&texture);
 	printError("load textures");
 }
 
