@@ -11,18 +11,21 @@ CXX=g++
 RM=rm -f
 
 CPPFLAGS = -Wall -pedantic -std=c++0x
-FLAGS= -lm -DGL_GLEXT_PROTOTYPES
+COMFLAGS = -lm -DGL_GLEXT_PROTOTYPES
 
-LFLAG= -lGL
-WFLAG= -lfreeglut -lglew32 -lopengl32 -L$(COM)/Windows/lib
-
-# Utilities
 COM=common
-LINC= -I$(COM) -I$(COM)/Linux
-WINC= -I$(COM) -I$(COM)/Windows
+COMUTILS = $(COM)/*.c
+COMINC = -I$(COM) 
 
-UTILS=$(COM)/*.c
-LUTILS=$(COM)/Linux/MicroGlut.c $(UTILS)
+ifeq ($(OS),Windows_NT)
+INC= $(COMINC) -I$(COM)/Windows
+FLAGS= $(COMFLAGS) -lfreeglut -lglew32 -lopengl32 -L$(COM)/Windows/lib $(INC)
+UTILS= $(COMUTILS)
+else
+INC= $(COMINC) -I$(COM)/Linux
+FLAGS= $(COMFLAGS) -lGL
+UTILS= $(COMUTILS) $(COM)/Linux/MicroGlut.c
+endif
 
 # Input files
 LAB0=Lab0/lab0.cc
@@ -30,35 +33,30 @@ LAB11=Lab1-1/lab1-1.cc
 LAB12=Lab1-2/lab1-2.cc
 LAB2=Lab2/skinning.c
 
+OBJECTS = *.o
+
 #Output location
 BIN=bin
 
-all: wlab2
 
-lab0: $(LAB0)
-	$(CXX) $(CPPFLAGS) -o $(BIN)/lab0 $(LAB0) $(LUTILS) $(FLAGS) $(LFLAG) $(LINC)
+all: alab2
 
-wlab0: $(LAB0)
-	$(CXX) $(CPPFLAGS) -o $(BIN)/lab0 $(LAB0) $(UTILS) $(FLAGS) $(WFLAG) $(WINC)
+alab0: $(LAB0) $(OBJECTS)
+	$(CXX) $(CPPFLAGS) -o $(BIN)/lab0 $(LAB0) $(OBJECTS) $(FLAGS)
 
-lab11: $(LAB11)
-	$(CXX) $(CPPFLAGS) -o $(BIN)/lab11 $(LAB11) $(LUTILS) $(FLAGS) $(LFLAG) $(LINC)
-
-wlab11: $(LAB11)
-	$(CXX) $(CPPFLAGS) -o $(BIN)/lab11 $(LAB11) $(UTILS) $(FLAGS) $(WFLAG) $(WINC)
+alab11: $(LAB11) $(OBJECTS)
+	$(CXX) $(CPPFLAGS) -o $(BIN)/lab11 $(LAB11) $(OBJECTS) $(FLAGS)
 	
-lab12: $(LAB11)
-	$(CXX) $(CPPFLAGS) -o $(BIN)/lab12 $(LAB12) $(LUTILS) $(FLAGS) $(LFLAG) $(LINC)
+alab12: $(LAB11) $(OBJECTS)
+	$(CXX) $(CPPFLAGS) -o $(BIN)/lab12 $(LAB12) $(OBJECTS) $(FLAGS)
 
-wlab12: $(LAB12)
-	$(CXX) $(CPPFLAGS) -o $(BIN)/lab12 $(LAB12) $(UTILS) $(FLAGS) $(WFLAG) $(WINC)
-	
-lab2: $(LAB2)
-	$(CXX) $(CPPFLAGS) -o $(BIN)/lab2 $(LAB2) $(LUTILS) $(FLAGS) $(LFLAG) $(LINC)
+alab2: $(LAB2) $(OBJECTS)
+	$(CXX) $(CPPFLAGS) -o $(BIN)/lab2 $(LAB2) $(OBJECTS) $(FLAGS)
 
-wlab2: $(LAB2)
-	$(CXX) $(CPPFLAGS) -o $(BIN)/lab2 $(LAB2) $(UTILS) $(FLAGS) $(WFLAG) $(WINC)
-	
+$(OBJECTS):
+	$(CXX) $(CPPFLAGS) -c $(UTILS) $(FLAGS)
+
 clean :
 	@ $(RM) $(BIN)/lab*
+	@ $(RM) $(OBJECTS)
 
