@@ -248,7 +248,27 @@ void DeformCylinder()
   //vec3 v[kMaxBones];
 
   //float w[kMaxBones];
-  int row, corner;
+  int row, corner, bone;
+  
+  mat4 Mani[kMaxBones];
+  mat4 Mori[kMaxBones];
+  
+  for (bone = 0; bone < kMaxBones; bone++)
+  {
+    mat4 Ma = T(g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z) * g_bonesRes[bone].rot;
+    mat4 Mo = T(-g_bones[bone].pos.x, -g_bones[bone].pos.y, -g_bones[bone].pos.z);
+
+    if (bone == 0)
+    {
+      Mani[bone] = Ma;
+      Mori[bone] = Mo;
+    }
+    else
+    {
+      Mori[bone] = Mo;
+      Mani[bone] = Mani[bone - 1] * Ma;
+    }
+  }
 
   // för samtliga vertexar 
   for (row = 0; row < kMaxRow; row++)
@@ -264,6 +284,13 @@ void DeformCylinder()
       // g_boneWeights
       // g_vertsOrg
       // g_vertsRes
+      vec3 v = g_vertsOrg[row][corner];
+      vec3 vtot = {0,0,0};
+	  for(bone = 0; bone < kMaxBones; bone++)
+	  {
+      	vtot +=  g_boneWeights[row][corner][bone] * (Mani[bone] * Mori[bone] * v);
+      }
+      g_vertsRes[row][corner] = vtot;
       
     }
   }
@@ -350,7 +377,7 @@ void DisplayWindow()
   DrawCylinder();
 
   glutSwapBuffers();
-};
+}
 
 void OnTimer(int value)
 {
@@ -415,7 +442,7 @@ int main(int argc, char **argv)
 			kMaxRow*kMaxCorners,
 			kMaxg_poly * 3);
 
-  g_shader = loadShaders("shader.vert" , "shader.frag");
+  g_shader = loadShaders("Lab2/shd/shader2.vert" , "Lab2/shd/shader.frag");
 
   glutMainLoop();
   exit(0);

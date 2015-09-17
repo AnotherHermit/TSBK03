@@ -66,7 +66,7 @@ Point3D g_normalsRes[kMaxRow][kMaxCorners];
 // vertex attributes sent to OpenGL
 Point3D g_boneWeights[kMaxRow][kMaxCorners];
 
-float weight[kMaxRow] = {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+float weight[kMaxRow] = {0.0, 0.11, 0.22, 0.33, 0.44, 0.55, 0.66, 0.77, 0.88, 1.0};
 
 Model *cylinderModel; // Collects all the above for drawing with glDrawElements
 
@@ -196,8 +196,9 @@ void DeformCylinder()
 	{
 		for (corner = 0; corner < kMaxCorners; corner++)
 		{
-			g_vertsRes[row][corner] = g_vertsOrg[row][corner];
-			
+			//g_vertsRes[row][corner] = g_vertsOrg[row][corner];
+		
+		
 			// ----=========	Uppgift 1: Hard skinning (stitching) i CPU ===========-----
 			// Deformera cylindern enligt det skelett som finns
 			// i g_bones.
@@ -211,6 +212,16 @@ void DeformCylinder()
 			// row traverserar i cylinderns längdriktning,
 			// corner traverserar "runt" cylindern
 			
+			vec3 v1 = g_vertsOrg[row][corner];
+			
+			v1 = g_bones[0].rot * v1 + g_bones[0].pos; 
+			vec3 v2 = Transpose(g_bones[0].rot) * (v1 - g_bones[0].pos);
+			v2 -= g_bones[1].pos;
+			v2 = g_bones[1].rot * v2 + g_bones[1].pos; 
+			v2 = g_bones[0].rot * v2 + g_bones[0].pos;
+			
+			g_vertsRes[row][corner] = v1 * (1-weight[row]) + v2 * weight[row];
+			
 			
 			// ---=========	Uppgift 2: Soft skinning i CPU ===========------
 			// Deformera cylindern enligt det skelett som finns
@@ -222,6 +233,7 @@ void DeformCylinder()
 			// g_boneWeights innehåller blendvikter för benen.
 			// g_vertsOrg innehåller ursprunglig vertexdata.
 			// g_vertsRes innehåller den vertexdata som skickas till OpenGL.
+			
 			
 		}
 	}
@@ -250,8 +262,7 @@ void animateBones(void)
 // Desc:	sätter bone rotationen i vertex shadern
 void setBoneRotation(void)
 {
-	// Uppgift 3 TODO: Här behöver du skicka över benens rotation
-	// till vertexshadern
+	glUniformMatrix4fv(glGetUniformLocation(g_shader, "boneRot"), 1, GL_TRUE, g_bones[1].rot.m);
 }
 
 
@@ -260,8 +271,7 @@ void setBoneRotation(void)
 // Desc:	sätter bone positionen i vertex shadern
 void setBoneLocation(void)
 {
-	// Uppgift 3 TODO: Här behöver du skicka över benens position
-	// till vertexshadern
+	glUniform3f(glGetUniformLocation(g_shader, "bonePos"), g_bones[1].pos.x, g_bones[1].pos.y, g_bones[1].pos.z);
 }
 
 
@@ -276,7 +286,7 @@ void DrawCylinder()
 	// Ersätt DeformCylinder med en vertex shader som gör vad DeformCylinder gör.
 	// Begynnelsen till shaderkoden ligger i filen "shader.vert" ...
 	
-	DeformCylinder();
+	//DeformCylinder();
 	
 	setBoneLocation();
 	setBoneRotation();
