@@ -2,7 +2,7 @@
 ###														###
 ###				          MAKEFILE			  			###
 ###											  			###
-### 		         Project in TSBK03	      			###
+### 		               TSBK03		      			###
 ###			   by Conrad Wahlen (conwa099)	  			###
 ###											  			###
 ###########################################################
@@ -23,7 +23,7 @@ FLAGS= $(COMFLAGS) -lfreeglut -lglew32 -lopengl32 -L$(COM)/Windows/lib $(INC)
 UTILS= $(COMUTILS)
 else
 INC= $(COMINC) -I$(COM)/Linux
-FLAGS= $(COMFLAGS) -lGL $(INC)
+FLAGS= $(COMFLAGS) -lGL -lXt -lX11 $(INC) 
 UTILS= $(COMUTILS) $(COM)/Linux/MicroGlut.c
 endif
 
@@ -33,12 +33,13 @@ LAB11=Lab1-1/lab1-1.cc
 LAB12=Lab1-2/lab1-2.cc
 LAB2=Lab2/skinning.c
 LAB22=Lab2/skinning2.c
+LAB3=Lab3/lab3.c
 
 #Output location
 BIN=bin
 
 
-all: alab22
+all: alab3
 
 alab0: $(LAB0) $(OBJECTS)
 	$(CXX) $(CPPFLAGS) -o $(BIN)/lab0 $(LAB0) $(UTILS) $(FLAGS)
@@ -55,8 +56,9 @@ alab2: $(LAB2)
 alab22: $(LAB22) 
 	$(CXX) $(CPPFLAGS) -o $(BIN)/lab22 $(LAB22) $(UTILS) $(FLAGS)
 
+alab3: $(LAB3)
+	$(CXX) $(CPPFLAGS) -o $(BIN)/lab3 $(LAB3) $(UTILS) $(FLAGS)
 
 clean :
 	@ $(RM) $(BIN)/lab*
-	@ $(RM) $(OBJECTS)
 
