@@ -209,12 +209,16 @@ void updateWorld()
 			
             if(dist < 2*kBallSize)
 			{
+				float scaling = 2*kBallSize / dist * 0.01;
 				vrel = DotProduct(ball[i].v - ball[j].v, normal);
 				jimp = (-(elast + 1.0) * vrel) / (1.0/(ball[i].mass) + 1.0/(ball[j].mass));
-				//std::cout << "Balls " << i << " and " << j << " get Jimp: " << jimp << std::endl;
 				ball[i].P = ball[i].P + jimp * normal;
 				ball[j].P = ball[j].P - jimp * normal;
-				ball[i].X = ball[i].X + (2*kBallSize - dist) * normal;
+				
+				//ball[i].P = ball[i].P + normal * scaling;
+				//ball[j].P = ball[j].P - normal * scaling;
+				
+				//ball[i].X = ball[i].X + (2*kBallSize - dist) * normal;
 				ball[j].X = ball[j].X - (2*kBallSize - dist) * normal;
 			}
         }
@@ -339,6 +343,7 @@ void init()
 		ball[i].R = IdentityMatrix();
 	}
 	
+	
 	int nball = 15;
 	for(i = 0; i < 5; i++)
 		for (int j = i; j < 5; j++)
@@ -347,13 +352,13 @@ void init()
 			nball--;
 		}	
 	
-	ball[0].X = SetVector(0.01, 0, -1.6);
-	//ball[1].X = SetVector(0.05, 0, 0.5);
-	//ball[2].X = SetVector(0.05, 0, 1.0);
+	ball[0].X = SetVector(0.0, 0, -1.6);
+	//ball[1].X = SetVector(0.0, 0, 0.5);
+	//ball[2].X = SetVector(0.0, 0, 1.0);
 	//ball[3].X = SetVector(0, 0, 1.5);
 	ball[0].P = SetVector(0, 0, -6.0);
 	//ball[3].P = SetVector(0, 0, 1.00);
-	ball[0].mass = 2.0;
+	//ball[0].mass = 2.0;
 	//ball[3].mass = 2.0;
 
     cam = SetVector(0, 2, 2);
