@@ -34,12 +34,14 @@ LAB12=Lab1-2/lab1-2.cc
 LAB2=Lab2/skinning.c
 LAB22=Lab2/skinning2.c
 LAB3=Lab3/lab3.c
+LAB4=Lab4/lab4.c
+LAB4E = $(LAB4) Lab4/SpriteLight.c
 
 #Output location
 BIN=bin
 
 
-all: alab3
+all: alab4
 
 alab0: $(LAB0) $(OBJECTS)
 	$(CXX) $(CPPFLAGS) -o $(BIN)/lab0 $(LAB0) $(UTILS) $(FLAGS)
@@ -58,6 +60,9 @@ alab22: $(LAB22)
 
 alab3: $(LAB3)
 	$(CXX) $(CPPFLAGS) -o $(BIN)/lab3 $(LAB3) $(UTILS) $(FLAGS)
+
+alab4: $(LAB4)
+	$(CXX) $(CPPFLAGS) -o $(BIN)/lab4 $(LAB4E) $(UTILS) $(FLAGS)
 
 clean :
 	@ $(RM) $(BIN)/lab*
