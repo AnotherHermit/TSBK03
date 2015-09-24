@@ -16,9 +16,47 @@
 #include "LoadTGA.h"
 #include "SpriteLight.h"
 #include "GL_utilities.h"
+#include <vector>
+
+
 
 // Lägg till egna globaler här efter behov.
+class boidHandler 
+{
+	std::vector<float> dist_diff;	
 
+public:
+	boidHandler(int n)
+	{
+		dist_diff.resize(n);
+	}
+	
+	void calcDistDiff()
+	{
+		SpritePtr current = gSpriteRoot;
+		SpritePtr other;
+		while (current != NULL)
+		{
+			other = current->next;
+			while(other != NULL)
+			{
+				FPoint diff = current->position - other->position;
+				float dist = diff.h * diff.h + diff.v * diff.v;
+				dist_diff.push_back(dist);
+			}
+		}
+	}
+};
+
+
+
+
+FPoint Cohesion()
+{
+	FPoint coh_v;
+	
+	return coh_v;	
+}
 
 void SpriteBehavior() // Din kod!
 {

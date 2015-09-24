@@ -17,6 +17,26 @@
 typedef struct FPoint
 {
 	GLfloat h, v;
+	
+	FPoint(): h(0), v(0) {}
+	FPoint(float x, float y): h(x), v(y) {}
+	
+	FPoint operator+ (const FPoint& b)
+	{
+		FPoint point;
+		point.h = this->h + b.h;
+		point.v = this->v + b.v;
+		return point;
+	}
+	
+	FPoint operator- (const FPoint& b)
+	{
+		FPoint point;
+		point.h = this->h - b.h;
+		point.v = this->v - b.v;
+		return point;
+	}
+	
 } FPoint;
 
 typedef struct SpriteRec
