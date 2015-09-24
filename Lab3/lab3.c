@@ -91,7 +91,7 @@ typedef struct
 
   vec3 F, T; // accumulated force and torque
 
-//  mat4 J, Ji; We could have these but we can live without them for spheres.
+  mat4 Ji, Jimod; //We could have these but we can live without them for spheres.
   vec3 omega; // Angular momentum
   vec3 v; // Change in velocity
 
@@ -197,7 +197,7 @@ void updateWorld()
 	}
 
 	// Detect collisions, calculate speed differences, apply forces
-	float elast = 0.3;
+	float elast = 1.0;
 	for (i = 0; i < kNumBalls; i++)
         for (j = i+1; j < kNumBalls; j++)
         {
@@ -209,7 +209,7 @@ void updateWorld()
 			
             if(dist < 2*kBallSize)
 			{
-				float scaling = 2*kBallSize / dist * 0.01;
+				//float scaling = 2*kBallSize / dist * 0.01;
 				vrel = DotProduct(ball[i].v - ball[j].v, normal);
 				jimp = (-(elast + 1.0) * vrel) / (1.0/(ball[i].mass) + 1.0/(ball[j].mass));
 				ball[i].P = ball[i].P + jimp * normal;
@@ -225,9 +225,18 @@ void updateWorld()
 
 	// Control rotation here to reflect
 	// friction against floor, simplified as well as more correct
+	vec3 Ffric;
 	for (i = 0; i < kNumBalls; i++)
 	{
-		// YOUR CODE HERE
+		if(deltaT > 0.0000001)
+		{
+			vec3 groundV = CrossProduct(ball[i].omega, vec3(0.0,-kBallSize,0.0));
+			vec3 diffV = ball[i].v + groundV;
+		
+			Ffric = diffV / deltaT * ball[i].mass * 10.0;
+			
+			ball[i].T = CrossProduct(vec3(0.0,kBallSize,0.0),Ffric);
+		}
 	}
 
 // Update state, follows the book closely
@@ -236,15 +245,14 @@ void updateWorld()
 		vec3 dX, dP, dL, dO;
 		mat4 Rd;
 
-		// Note: omega is not set. How do you calculate it?
-		ball[i].omega = 8.5*CrossProduct(vec3(0.0,1.0,0.0), ball[i].P);
-		
 //		v := P * 1/mass
 		ball[i].v = ScalarMult(ball[i].P, 1.0/(ball[i].mass));
 //		X := X + v*dT
 		dX = ScalarMult(ball[i].v, deltaT); // dX := v*dT
 		ball[i].X = VectorAdd(ball[i].X, dX); // X := X + dX
 //		R := R + Rd*dT
+		ball[i].Ji = ball[i].R * ball[i].Jimod * Transpose(ball[i].R);
+		ball[i].omega = ball[i].Ji * ball[i].L;
 		dO = ScalarMult(ball[i].omega, deltaT); // dO := omega*dT
 		Rd = CrossMatrix(dO); // Calc dO, add to R
 		Rd = Mult(Rd, ball[i].R); // Rotate the diff (NOTE: This was missing in early versions.)
@@ -340,7 +348,9 @@ void init()
 		ball[i].mass = 1.0;
 		//ball[i].P = SetVector(((float)(i % 13))/ 50.0, 0.0, ((float)(i % 15))/50.0);
 		ball[i].P = SetVector(0, 0, 0);
+		ball[i].L = SetVector(0, 0, 0);
 		ball[i].R = IdentityMatrix();
+		ball[i].Jimod = ball[i].R * ball[i].mass * 3.0;
 	}
 	
 	

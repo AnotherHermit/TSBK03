@@ -299,6 +299,30 @@ vec4 operator*(const mat4 &a, const vec4 &b)
 	return MultVec4(a, b); // result = a * b
 }
 
+// mat4 * float
+inline
+mat4 operator*(const mat4 &a, float b)
+{
+	mat4 m;
+	m.m[0] = a.m[0] * b;
+	m.m[1] = a.m[1] * b;
+	m.m[2] = a.m[2] * b;
+	m.m[3] = a.m[3] * b;
+	m.m[4] = a.m[4] * b;
+	m.m[5] = a.m[5] * b;
+	m.m[6] = a.m[6] * b;
+	m.m[7] = a.m[7] * b;
+	m.m[8] = a.m[8] * b;
+	m.m[9] = a.m[9] * b;
+	m.m[10] = a.m[10] * b;
+	m.m[11] = a.m[11] * b;
+	m.m[12] = a.m[12] * b;
+	m.m[13] = a.m[13] * b;
+	m.m[14] = a.m[14] * b;
+	m.m[15] = a.m[15] * b;
+	return m;
+}
+
 // mat3 * vec3
 inline
 vec3 operator*(const mat3 &a, const vec3 &b)
