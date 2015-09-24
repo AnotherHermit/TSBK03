@@ -2,94 +2,161 @@
 // by Ingemar Ragnemalm 2009
 // used as base for lab 4 in TSBK03.
 // OpenGL 3 conversion 2013.
-
 #ifdef __APPLE__
+// Mac
 	#include <OpenGL/gl3.h>
 	#include "MicroGlut.h"
 	// uses framework Cocoa
 #else
-	#include <GL/gl.h>
-	#include "MicroGlut.h"
+	#ifdef _WIN32
+// MS
+		#include "glew.h"
+		#include "freeglut.h"
+	#else
+// Linux
+		#include "MicroGlut.h"
+		#include <GL/gl.h>
+//		#include <GL/glut.h>
+	#endif
 #endif
 
 #include <stdlib.h>
 #include "LoadTGA.h"
 #include "SpriteLight.h"
 #include "GL_utilities.h"
-#include <vector>
 
+#include <iostream>
 
+#include "BoidHandler.h"
 
-// LŠgg till egna globaler hŠr efter behov.
-class boidHandler 
+// Lï¿½gg till egna globaler hï¿½r efter behov.
+TextureData *sheepFace, *blackFace, *dogFace, *foodFace;
+BoidHandler* sheepies;
+float cMaxDist = 100;
+float sMaxDist = 50;
+float aMaxDist = 200;
+float cWeight = 1.0;
+float sWeight = 1.0;
+float aWeight = 1.0;
+float pWeight = 1.0;
+
+// Returns a normalized vector pointing to the center of gravity for the boids
+// within a certain radius
+FPoint Cohesion(SpriteRec* boid, int boidID)
 {
-	std::vector<float> dist_diff;	
-
-public:
-	boidHandler(int n)
+	FPoint coh;
+	int totalNum = 0;
+	float dist;
+	for(int i = 0; i < sheepies->getNum(); i++)
 	{
-		dist_diff.resize(n);
-	}
-	
-	void calcDistDiff()
-	{
-		SpritePtr current = gSpriteRoot;
-		SpritePtr other;
-		while (current != NULL)
+		if (i != boidID)
 		{
-			other = current->next;
-			while(other != NULL)
+			dist = sheepies->getDist(boidID, i);
+			if(dist < cMaxDist)
 			{
-				FPoint diff = current->position - other->position;
-				float dist = diff.h * diff.h + diff.v * diff.v;
-				dist_diff.push_back(dist);
+				coh = coh + sheepies->getBoid(i)->position;
+				totalNum++;
 			}
 		}
 	}
-};
+	if(totalNum)
+	{
+		coh = coh / (float)totalNum;
+		coh = coh - boid->position;
+		coh = Normalize(coh);
+	}
+	return coh;
+}
 
-
-
-
-FPoint Cohesion()
+// Returns a normalized vector pointing away from boids that are close
+FPoint Separation(SpriteRec* boid, int boidID)
 {
-	FPoint coh_v;
-	
-	return coh_v;	
+	FPoint sep;
+	FPoint dir;
+	// Set to -1 to detect if any boid is within distance
+	float scaling = -1;
+	float dist;
+	for(int i = 0; i < sheepies->getNum(); i++)
+	{
+		if (i != boidID)
+		{
+			dist = sheepies->getDist(boidID, i);
+			if(dist < sMaxDist)
+			{
+				scaling = (sMaxDist - dist) / sMaxDist;
+				dir = boid->position - sheepies->getBoid(i)->position;
+				sep = sep + dir * scaling;
+			}
+		}
+	}
+	if(scaling > 0.0)
+		sep = Normalize(sep);
+
+	return sep;
+}
+
+// Return a normalized vector that
+FPoint Alignment(SpriteRec* boid, int boidID)
+{
+	FPoint ali;
+	FPoint dir;
+	float dist;
+	bool boidFound = false;
+	for(int i = 0; i < sheepies->getNum(); i++)
+	{
+		if (i != boidID)
+		{
+			dist = sheepies->getDist(boidID, i);
+			if(dist < aMaxDist)
+			{
+				dir = Normalize(sheepies->getBoid(i)->speed);
+				ali = ali + dir;
+				boidFound = true;
+			}
+		}
+	}
+	if(boidFound)
+		ali = Normalize(ali);
+
+	return ali;
 }
 
 void SpriteBehavior() // Din kod!
 {
-// LŠgg till din labbkod hŠr. Det gŒr bra att Šndra var som helst i
-// koden i švrigt, men mycket kan samlas hŠr. Du kan utgŒ frŒn den
-// globala listroten, gSpriteRoot, fšr att kontrollera alla sprites
-// hastigheter och positioner, eller arbeta frŒn egna globaler.
+	FPoint coh, sep, ali, total;
+	SpriteRec* boid;
+	sheepies->updateDist();
+	for(int i = 0; i < sheepies->getNum(); i++)
+	{
+		boid = sheepies->getBoid(i);
+		coh = Cohesion(boid, i) * cWeight;
+		sep = Separation(boid, i) * sWeight;
+		ali = Alignment(boid, i) * aWeight;
+		total = coh + sep + ali + boid->speed * pWeight;
+		boid->speed = Normalize(total) * 3;
+	}
 }
 
 // Drawing routine
 void Display()
 {
-	SpritePtr sp;
-	
 	glClearColor(0, 0, 0.2, 1);
 	glClear(GL_COLOR_BUFFER_BIT+GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_TEXTURE_2D);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
+
 	DrawBackground();
-	
+
 	SpriteBehavior(); // Din kod!
-	
+
 // Loop though all sprites. (Several loops in real engine.)
-	sp = gSpriteRoot;
-	do
+	for(int i = 0; i < sheepies->getNum(); i++)
 	{
-		HandleSprite(sp); // Callback in a real engine
-		DrawSprite(sp);
-		sp = sp->next;
-	} while (sp != NULL);
-	
+		HandleSprite(sheepies->getBoid(i));
+		DrawSprite(sheepies->getBoid(i));
+	}
+
 	glutSwapBuffers();
 }
 
@@ -106,9 +173,6 @@ void Timer(int value)
 	glutPostRedisplay();
 }
 
-// Example of user controllable parameter
-float someValue = 0.0;
-
 void Key(unsigned char key,
          __attribute__((unused)) int x,
          __attribute__((unused)) int y)
@@ -116,12 +180,40 @@ void Key(unsigned char key,
   switch (key)
   {
     case '+':
-    	someValue += 0.1;
-    	printf("someValue = %f\n", someValue);
+    	pWeight += 0.1;
+    	printf("pWeight = %f\n", pWeight);
     	break;
     case '-':
-    	someValue -= 0.1;
-    	printf("someValue = %f\n", someValue);
+    	pWeight -= 0.1;
+    	printf("pWeight = %f\n", pWeight);
+    	break;
+	case 'd':
+    	cWeight += 0.1;
+    	printf("cWeight = %f\n", cWeight);
+    	break;
+	case 'c':
+    	cWeight -= 0.1;
+    	printf("cWeight = %f\n", cWeight);
+    	break;
+	case 's':
+    	sWeight += 0.1;
+    	printf("sWeight = %f\n", sWeight);
+    	break;
+	case 'x':
+    	sWeight -= 0.1;
+    	printf("sWeight = %f\n", sWeight);
+    	break;
+	case 'a':
+		aWeight += 0.1;
+		printf("aWeight = %f\n", aWeight);
+		break;
+	case 'z':
+    	aWeight -= 0.1;
+    	printf("aWeight = %f\n", aWeight);
+    	break;
+	case 'b':
+    	sheepies->addBoids(1,sheepFace);
+    	printf("Added a sheep, number of sheep = %d\n", sheepies->getNum());
     	break;
     case 0x1b:
       exit(0);
@@ -130,18 +222,14 @@ void Key(unsigned char key,
 
 void Init()
 {
-	TextureData *sheepFace, *blackFace, *dogFace, *foodFace;
-	
 	LoadTGATextureSimple("Lab4/tex/leaves.tga", &backgroundTexID); // Bakgrund
-	
-	sheepFace = GetFace("Lab4/tex/sheep.tga"); // Ett fŒr
-	blackFace = GetFace("Lab4/tex/blackie.tga"); // Ett svart fŒr
+
+	sheepFace = GetFace("Lab4/tex/sheep.tga"); // Ett fï¿½r
+	blackFace = GetFace("Lab4/tex/blackie.tga"); // Ett svart fï¿½r
 	dogFace = GetFace("Lab4/tex/dog.tga"); // En hund
 	foodFace = GetFace("Lab4/tex/mat.tga"); // Mat
-	
-	NewSprite(sheepFace, 100, 200, 1, 1);
-	NewSprite(sheepFace, 200, 100, 1.5, -1);
-	NewSprite(sheepFace, 250, 200, -1, 1.5);
+
+	sheepies = new BoidHandler(6, sheepFace);
 }
 
 int main(int argc, char **argv)
@@ -151,15 +239,19 @@ int main(int argc, char **argv)
 	glutInitWindowSize(800, 600);
 	glutInitContextVersion(3, 2);
 	glutCreateWindow("SpriteLight demo / Flocking");
-	
+
 	glutDisplayFunc(Display);
 	glutTimerFunc(20, Timer, 0); // Should match the screen synch
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Key);
-	
+	#ifdef WIN32
+		glewInit();
+	#endif
+
 	InitSpriteLight();
+
 	Init();
-	
+
 	glutMainLoop();
 	return 0;
 }
