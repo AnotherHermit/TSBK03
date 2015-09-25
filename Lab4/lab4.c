@@ -31,111 +31,8 @@
 
 // L�gg till egna globaler h�r efter behov.
 TextureData *sheepFace, *blackFace, *dogFace, *foodFace;
-BoidHandler* sheepies;
-float cMaxDist = 100;
-float sMaxDist = 50;
-float aMaxDist = 200;
-float cWeight = 1.0;
-float sWeight = 1.0;
-float aWeight = 1.0;
-float pWeight = 1.0;
-
-// Returns a normalized vector pointing to the center of gravity for the boids
-// within a certain radius
-FPoint Cohesion(SpriteRec* boid, int boidID)
-{
-	FPoint coh;
-	int totalNum = 0;
-	float dist;
-	for(int i = 0; i < sheepies->getNum(); i++)
-	{
-		if (i != boidID)
-		{
-			dist = sheepies->getDist(boidID, i);
-			if(dist < cMaxDist)
-			{
-				coh = coh + sheepies->getBoid(i)->position;
-				totalNum++;
-			}
-		}
-	}
-	if(totalNum)
-	{
-		coh = coh / (float)totalNum;
-		coh = coh - boid->position;
-		coh = Normalize(coh);
-	}
-	return coh;
-}
-
-// Returns a normalized vector pointing away from boids that are close
-FPoint Separation(SpriteRec* boid, int boidID)
-{
-	FPoint sep;
-	FPoint dir;
-	// Set to -1 to detect if any boid is within distance
-	float scaling = -1;
-	float dist;
-	for(int i = 0; i < sheepies->getNum(); i++)
-	{
-		if (i != boidID)
-		{
-			dist = sheepies->getDist(boidID, i);
-			if(dist < sMaxDist)
-			{
-				scaling = (sMaxDist - dist) / sMaxDist;
-				dir = boid->position - sheepies->getBoid(i)->position;
-				sep = sep + dir * scaling;
-			}
-		}
-	}
-	if(scaling > 0.0)
-		sep = Normalize(sep);
-
-	return sep;
-}
-
-// Return a normalized vector that
-FPoint Alignment(SpriteRec* boid, int boidID)
-{
-	FPoint ali;
-	FPoint dir;
-	float dist;
-	bool boidFound = false;
-	for(int i = 0; i < sheepies->getNum(); i++)
-	{
-		if (i != boidID)
-		{
-			dist = sheepies->getDist(boidID, i);
-			if(dist < aMaxDist)
-			{
-				dir = Normalize(sheepies->getBoid(i)->speed);
-				ali = ali + dir;
-				boidFound = true;
-			}
-		}
-	}
-	if(boidFound)
-		ali = Normalize(ali);
-
-	return ali;
-}
-
-void SpriteBehavior() // Din kod!
-{
-	FPoint coh, sep, ali, total;
-	SpriteRec* boid;
-	sheepies->updateDist();
-	for(int i = 0; i < sheepies->getNum(); i++)
-	{
-		boid = sheepies->getBoid(i);
-		coh = Cohesion(boid, i) * cWeight;
-		sep = Separation(boid, i) * sWeight;
-		ali = Alignment(boid, i) * aWeight;
-		total = coh + sep + ali + boid->speed * pWeight;
-		boid->speed = Normalize(total) * 3;
-	}
-}
+BoidGene *sheepGene, *blackGene;
+BoidHandler *sheepies;
 
 // Drawing routine
 void Display()
@@ -148,14 +45,9 @@ void Display()
 
 	DrawBackground();
 
-	SpriteBehavior(); // Din kod!
-
-// Loop though all sprites. (Several loops in real engine.)
-	for(int i = 0; i < sheepies->getNum(); i++)
-	{
-		HandleSprite(sheepies->getBoid(i));
-		DrawSprite(sheepies->getBoid(i));
-	}
+	sheepies->updateDist();
+	sheepies->boidBehave();
+	sheepies->boidHandleDraw();
 
 	glutSwapBuffers();
 }

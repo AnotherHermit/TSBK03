@@ -11,8 +11,7 @@
 #include "VectorUtils3.h"
 #include "GL_utilities.h"
 
-// Globals: The sprite list, background texture and viewport dimensions (virtual or real pixels)
-SpritePtr gSpriteRoot = NULL;
+// Globals: The background texture and viewport dimensions (virtual or real pixels)
 GLuint backgroundTexID = 0;
 long gWidth=800, gHeight=600;
 
@@ -42,18 +41,21 @@ TextureData *GetFace(const char *fileName)
 	return fp;
 }
 
-struct SpriteRec *NewSprite(TextureData *f, GLfloat h, GLfloat v, GLfloat hs, GLfloat vs)
+struct SpriteRec *NewSprite(TextureData *f, FPoint pos, FPoint spd, BoidGene* g, int id)
 {
 	SpritePtr sp;
 
 	sp = (SpriteRec *)malloc(sizeof(SpriteRec));
-	
-	sp->position.h = h;
-	sp->position.v = v;
-	sp->speed.h = hs;
-	sp->speed.v = vs;
+
+	sp->position = pos;
+	sp->speed = spd;
 	sp->face = f;
 	sp->rotation = 0;
+
+	
+	sp->gene = g;
+	sp->ID = id;
+
 	return sp;
 }
 
@@ -61,8 +63,7 @@ struct SpriteRec *NewSprite(TextureData *f, GLfloat h, GLfloat v, GLfloat hs, GL
 void HandleSprite(SpritePtr sp)
 {
 // Move by speed, bounce off screen edges.
-	sp->position.h += sp->speed.h;
-	sp->position.v += sp->speed.v;
+	sp->position = sp->position + sp->speed;
 	if (sp->position.h < 0)
 	{
 		sp->speed.h = fabs(sp->speed.h);

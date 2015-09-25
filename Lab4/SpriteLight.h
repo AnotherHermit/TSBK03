@@ -29,6 +29,18 @@
 #include <iostream>
 #include <math.h>
 
+typedef struct BoidGene
+{
+    float cMaxDist = 100;
+    float sMaxDist = 50;
+    float aMaxDist = 200;
+    float cWeight = 1.0;
+    float sWeight = 1.0;
+    float aWeight = 1.0;
+    float pWeight = 1.0;
+    float rWeight = 1.0;
+} BoidGene;
+
 typedef struct FPoint
 {
 	GLfloat h, v;
@@ -106,6 +118,9 @@ typedef struct SpriteRec
 	GLfloat rotation;
 
 	// Add custom sprite data here as needed
+	int ID;
+	BoidGene* gene;
+
 } SpriteRec, *SpritePtr;
 
 // Globals: The sprite list, background texture and viewport dimensions (virtual or real pixels)
@@ -115,7 +130,7 @@ extern long gWidth, gHeight;
 
 // Functions
 TextureData *GetFace(const char *fileName);
-struct SpriteRec *NewSprite(TextureData *f, GLfloat h, GLfloat v, GLfloat hs, GLfloat vs);
+struct SpriteRec *NewSprite(TextureData *f, FPoint pos, FPoint spd, BoidGene *g, int id);
 void HandleSprite(SpritePtr sp);
 void DrawSprite(SpritePtr sp);
 void DrawBackground();
