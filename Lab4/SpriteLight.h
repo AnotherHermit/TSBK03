@@ -31,84 +31,42 @@
 
 typedef struct BoidGene
 {
-    float cMaxDist = 100;
-    float sMaxDist = 50;
-    float aMaxDist = 200;
-    float cWeight = 1.0;
-    float sWeight = 1.0;
-    float aWeight = 1.0;
-    float pWeight = 1.0;
-    float rWeight = 1.0;
+    float cMaxDist = 100.0f;
+    float sMaxDist = 20.0f;
+    float aMaxDist = 70.0f;
+    float cWeight = 0.5f;
+    float sWeight = 1.0f;
+    float aWeight = 0.5f;
+	float rWeight = 0.0f;
+    float pWeight = 10.0f;
+	float speed   = 1.0f;
+
 } BoidGene;
 
 typedef struct FPoint
 {
 	GLfloat h, v;
 
-	FPoint(): h(0), v(0) {}
+	FPoint(): h(0.0f), v(0.0f) {}
 	FPoint(float x, float y): h(x), v(y) {}
+	FPoint(const FPoint& b): h(b.h), v(b.v) {}
 
-	FPoint operator+ (const FPoint& b) const
-	{
-		FPoint point;
-		point.h = this->h + b.h;
-		point.v = this->v + b.v;
-		return point;
-	}
+	FPoint &operator=(const FPoint &b);
+	FPoint operator+(const FPoint &b) const;
+	FPoint operator-(const FPoint &b) const;
+	FPoint operator/(const float b) const;
+	FPoint operator*(const float b) const;
+	FPoint &operator+=(const FPoint &b);
+	FPoint &operator-=(const FPoint &b);
+	FPoint &operator*=(const float b);
+	FPoint &operator/=(const float b);
 
-	FPoint operator- (const FPoint& b) const
-	{
-		FPoint point;
-		point.h = this->h - b.h;
-		point.v = this->v - b.v;
-		return point;
-	}
-
-	FPoint operator/ (const float b) const
-	{
-		FPoint point;
-		point.h = this->h / b;
-		point.v = this->v / b;
-		return point;
-	}
-
-	FPoint operator* (const float b) const
-	{
-		FPoint point;
-		point.h = this->h * b;
-		point.v = this->v * b;
-		return point;
-	}
-
-	FPoint(const FPoint& b)
-	{
-		h = b.h;
-		v = b.v;
-	}
-
-	FPoint & operator= (const FPoint& b)
-	{
-		this->h = b.h;
-		this->v = b.v;
-		return *this;
-	}
-
+	FPoint &normalize();
+	float norm();
 } FPoint;
 
-inline
-float Norm(const FPoint& a)
-{
-	float norm = sqrt(a.h * a.h + a.v * a.v);
-	return norm;
-}
-
-inline
-FPoint Normalize(const FPoint& a)
-{
-	FPoint point;
-	point = a / Norm(a);
-	return point;
-}
+FPoint Normalize(FPoint a);
+FPoint Clamp(FPoint a, float c);
 
 typedef struct SpriteRec
 {
@@ -123,8 +81,7 @@ typedef struct SpriteRec
 
 } SpriteRec, *SpritePtr;
 
-// Globals: The sprite list, background texture and viewport dimensions (virtual or real pixels)
-extern SpritePtr gSpriteRoot;
+// Globals: The background texture and viewport dimensions (virtual or real pixels)
 extern GLuint backgroundTexID;
 extern long gWidth, gHeight;
 

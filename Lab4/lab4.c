@@ -123,15 +123,19 @@ void Init()
 
 	sheepGene = new BoidGene;
 	blackGene = new BoidGene;
+	blackGene->rWeight = 0.5f;
+	//blackGene->cWeight = 0.0f;
+	blackGene->aWeight = 0.0f;
 
-	sheepies = new BoidHandler(6, sheepFace, sheepGene);
+	sheepies = new BoidHandler(10, sheepFace, sheepGene);
+	sheepies->addBoids(1, blackFace, blackGene);
 }
 
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-	glutInitWindowSize(800, 600);
+	glutInitWindowSize(gWidth, gHeight);
 	glutInitContextVersion(3, 2);
 	glutCreateWindow("SpriteLight demo / Flocking");
 

@@ -21,12 +21,86 @@ unsigned int vertexArrayObjID;
 // Reference to shader program
 GLuint program;
 
-// Uncomment if you are on a system without fabs
-//GLfloat fabs(GLfloat in)
-//{
-//  if (in<0) return -1*in;
-//  else return in;
-//}
+// ===== FPoint functions =====
+
+FPoint &FPoint::operator=(const FPoint& b)
+{
+	this->h = b.h;
+	this->v = b.v;
+	return *this;
+}
+
+FPoint FPoint::operator+(const FPoint& b) const
+{
+	FPoint point(this->h + b.h, this->v + b.v);
+	return point;
+}
+
+FPoint FPoint::operator-(const FPoint& b) const
+{
+	FPoint point(this->h - b.h, this->v - b.v);
+	return point;
+}
+
+FPoint FPoint::operator*(const float b) const
+{
+	FPoint point(this->h * b, this->v * b);
+	return point;
+}
+
+FPoint FPoint::operator/(const float b) const
+{
+	FPoint point(this->h / b, this->v / b);
+	return point;
+}
+
+FPoint &FPoint::operator+=(const FPoint &b)
+{
+	*this = *this + b;
+	return *this;
+}
+
+FPoint &FPoint::operator-=(const FPoint &b)
+{
+	*this = *this - b;
+	return *this;
+}
+
+FPoint &FPoint::operator*=(const float b)
+{
+	*this = *this * b;
+	return *this;
+}
+
+FPoint &FPoint::operator/=(const float b)
+{
+	*this = *this / b;
+	return *this;
+}
+
+FPoint &FPoint::normalize()
+{
+	*this = (this->norm() > 0.00001f) ? *this / this->norm() : FPoint();
+	return *this;
+}
+
+float FPoint::norm()
+{
+	return sqrt(h * h + v * v);
+}
+
+FPoint Normalize(FPoint a)
+{
+	return a.normalize();
+}
+
+FPoint Clamp(FPoint a, float c)
+{
+	FPoint point = (a.norm() > c) ? a.normalize() * c : a;
+	return point;
+}
+
+// ===== End FPoint functions =====
 
 TextureData *GetFace(const char *fileName)
 {
@@ -52,7 +126,7 @@ struct SpriteRec *NewSprite(TextureData *f, FPoint pos, FPoint spd, BoidGene* g,
 	sp->face = f;
 	sp->rotation = 0;
 
-	
+
 	sp->gene = g;
 	sp->ID = id;
 
@@ -122,11 +196,6 @@ void DrawBackground()
 	glBindVertexArray(vertexArrayObjID);	// Select VAO
 	glDrawArrays(GL_TRIANGLES, 0, 6);	// draw object
 }
-
-
-
-
-
 
 GLfloat vertices[] = {	-0.5f,-0.5f,0.0f,
 						-0.5f,0.5f,0.0f,

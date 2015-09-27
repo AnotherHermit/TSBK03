@@ -5,8 +5,15 @@
 #include <time.h>
 #include <iostream>
 
+float getRandom(int min, int max)
+{
+    float retVal = min + (float)rand() / (float)(RAND_MAX/(max-min));
+    return retVal;
+}
+
 BoidHandler::BoidHandler(int numBoids, TextureData *f, BoidGene *g)
 {
+    srand (time(NULL));
     addBoids(numBoids, f, g);
 }
 
@@ -28,10 +35,7 @@ void BoidHandler::updateDist()
     {
         for(auto jt = std::next(it,1); jt != boids.end(); jt++)
         {
-            FPoint diff = (*it)->position - (*jt)->position;
-
-            float dist = sqrt(diff.h * diff.h + diff.v * diff.v);
-            distDiff[i] = dist;
+            distDiff[i] = ((*it)->position - (*jt)->position).norm();
             i++;
         }
     }
@@ -40,16 +44,10 @@ void BoidHandler::updateDist()
 // Initialize the size of the distance matrix
 void BoidHandler::addBoids(int numBoids, TextureData *f, BoidGene *g)
 {
-    srand (time(NULL));
     for(int i = 0; i < numBoids; i++)
     {
-        float posh = rand() % 500 + 50;
-        float posv = rand() % 700 + 50;
-        FPoint pos(posh, posv);
-
-        float spdh = (rand() % 100) / 50.0;
-        float spdv = (rand() % 100) / 50.0;
-        FPoint spd(spdh, spdv);
+        FPoint pos(getRandom(0,gWidth), getRandom(0,gHeight));
+        FPoint spd(getRandom(-1,1), getRandom(-1,1));
 
         SpriteRec *temp = NewSprite(f, pos, spd, g, size());
         boids.push_back(temp);
@@ -82,82 +80,78 @@ unsigned int BoidHandler::size()
     return boids.size();
 }
 
-
-// Returns a normalized vector pointing to the center of gravity for the boids
-// within a certain radius
-
-// Returns a normalized vector pointing away from boids that are close
-
-// Return a normalized vector that aligns the movement of the boids
-void BoidHandler::boidCalculate(SpriteRec *b, FPoint *c, FPoint *s, FPoint *a)
+FPoint BoidHandler::boidCalculate(SpriteRec *b)
 {
-    int totalNum = 0;
+    FPoint c, s, a, r, p, total;
     FPoint dir;
-    float dist;
-    bool boidFound = false;
-	// Set to -1 to detect if any boid is within distance
-	float scaling = -1;
+    float dist, scaling;
+    int totalNum = 0;
 
-    float cD = b->gene->cMaxDist;
     float sD = b->gene->sMaxDist;
-    float aD = b->gene->aMaxDist;
 
+    // Calculate the cohesion, separation and alignment vectors from the
+    // distances to all other boids;
     for(auto it = boids.begin(); it != boids.end(); it++)
     {
 		if ((*it) != b)
 		{
 			dist = getDist(b->ID, (*it)->ID);
 
-            if(dist < cD)
+            // Cohesion calculates vector towards center of mass
+            if(dist < b->gene->cMaxDist)
 			{
-				*c = *c + (*it)->position;
+				c += (*it)->position;
 				totalNum++;
 			}
 
+            // Separation calculates vector pointing away from close boids
 			if(dist < sD)
 			{
 				scaling = (sD - dist) / sD;
 				dir = b->position - (*it)->position;
-				*s = *s + dir * scaling;
+				s += dir * scaling;
 			}
 
-            if(dist < aD)
+            // Alignment calculates average direction of travel
+            if(dist < b->gene->aMaxDist)
             {
                 dir = Normalize((*it)->speed);
-                *a = *a + dir;
-                boidFound = true;
+                a += dir;
             }
 		}
 	}
 
+    // Only when we had boids close enough do we need to calculate cohesion
     if(totalNum)
 	{
-		*c = *c / (float)totalNum;
-		*c = *c - b->position;
-		*c = Normalize(*c);
+		c /= (float)totalNum;
+		c -= b->position;
 	}
 
+    // Create a random movement
+    r = FPoint(getRandom(-1,1), getRandom(-1,1));
 
-	if(scaling > 0.0)
-		*s = Normalize(*s);
+    // Normalize to make the weights matter
+    c.normalize();
+	s.normalize();
+	a.normalize();
+    r.normalize();
 
-    if(boidFound)
-		*a = Normalize(*a);
+    c *= b->gene->cWeight; // Cohesion
+    s *= b->gene->sWeight; // Separation
+    a *= b->gene->aWeight; // Alignment
+    r *= b->gene->rWeight; // Random direction
+    p  = b->speed * b->gene->pWeight; // Previous speed
+
+    total = Normalize(p + c + s + a + r) * b->gene->speed;
+    return total;
 }
 
 void BoidHandler::boidBehave()
 {
-    float cW, sW, aW, pW;
     for(auto it = boids.begin(); it != boids.end(); it++)
     {
-        cW = (*it)->gene->cWeight;
-        sW = (*it)->gene->sWeight;
-        aW = (*it)->gene->aWeight;
-        pW = (*it)->gene->pWeight;
-        FPoint coh, sep, ali, total;
-        boidCalculate((*it), &coh, &sep, &ali);
-        total = coh * cW + sep * sW + ali * aW + (*it)->speed * pW;
-        (*it)->speed = Normalize(total) * 3;
+        (*it)->speed = boidCalculate(*it);
     }
 }
 

@@ -6,14 +6,14 @@
 #include "SpriteLight.h"
 
 
-
+float getRandom(int min, int max);
 
 class BoidHandler
 {
     std::vector<float> distDiff;
     std::vector<SpriteRec*> boids;
 
-    void boidCalculate(SpriteRec *b, FPoint *c, FPoint *s, FPoint *a);
+    FPoint boidCalculate(SpriteRec *b);
 
 public:
     BoidHandler(int numBoids, TextureData *f, BoidGene *g);
