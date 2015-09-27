@@ -13,7 +13,7 @@ class BoidHandler
     std::vector<float> distDiff;
     std::vector<SpriteRec*> boids;
 
-    void boidCalculate(SpriteRec *b, FPpoint *c, FPoint *s, FPoint *a);
+    void boidCalculate(SpriteRec *b, FPoint *c, FPoint *s, FPoint *a);
 
 public:
     BoidHandler(int numBoids, TextureData *f, BoidGene *g);

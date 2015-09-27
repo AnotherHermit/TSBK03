@@ -66,7 +66,7 @@ float BoidHandler::getDist(int boidA, int boidB)
     int i = std::min(boidA,boidB);
     int j = std::max(boidA,boidB);
     // Will always be even so shift will be correct div with 2
-    int index = j - 1 - i + i * size() - ()((i + 1) * i) >> 1);
+    int index = j - 1 - i + i * size() - (((i + 1) * i) >> 1);
     return distDiff[index];
 }
 
@@ -89,11 +89,12 @@ unsigned int BoidHandler::size()
 // Returns a normalized vector pointing away from boids that are close
 
 // Return a normalized vector that aligns the movement of the boids
-FPoint boidCalculate(SpriteRec *b, FPpoint *c, FPoint *s, FPoint *a)
+void BoidHandler::boidCalculate(SpriteRec *b, FPoint *c, FPoint *s, FPoint *a)
 {
     int totalNum = 0;
     FPoint dir;
     float dist;
+    bool boidFound = false;
 	// Set to -1 to detect if any boid is within distance
 	float scaling = -1;
 
@@ -109,7 +110,7 @@ FPoint boidCalculate(SpriteRec *b, FPpoint *c, FPoint *s, FPoint *a)
 
             if(dist < cD)
 			{
-				*coh = *coh + (*it)->position;
+				*c = *c + (*it)->position;
 				totalNum++;
 			}
 
@@ -117,13 +118,13 @@ FPoint boidCalculate(SpriteRec *b, FPpoint *c, FPoint *s, FPoint *a)
 			{
 				scaling = (sD - dist) / sD;
 				dir = b->position - (*it)->position;
-				*sep = *sep + dir * scaling;
+				*s = *s + dir * scaling;
 			}
 
             if(dist < aD)
             {
                 dir = Normalize((*it)->speed);
-                *ali = *ali + dir;
+                *a = *a + dir;
                 boidFound = true;
             }
 		}
@@ -131,31 +132,32 @@ FPoint boidCalculate(SpriteRec *b, FPpoint *c, FPoint *s, FPoint *a)
 
     if(totalNum)
 	{
-		coh = coh / (float)totalNum;
-		coh = coh - boid->position;
-		coh = Normalize(coh);
+		*c = *c / (float)totalNum;
+		*c = *c - b->position;
+		*c = Normalize(*c);
 	}
 
 
 	if(scaling > 0.0)
-		sep = Normalize(sep);
+		*s = Normalize(*s);
 
     if(boidFound)
-		ali = Normalize(ali);
-
-	return sep;
+		*a = Normalize(*a);
 }
 
 void BoidHandler::boidBehave()
 {
+    float cW, sW, aW, pW;
     for(auto it = boids.begin(); it != boids.end(); it++)
     {
+        cW = (*it)->gene->cWeight;
+        sW = (*it)->gene->sWeight;
+        aW = (*it)->gene->aWeight;
+        pW = (*it)->gene->pWeight;
         FPoint coh, sep, ali, total;
-        coh = Cohesion(boid) * cWeight;
-        sep = Separation(boid, i) * sWeight;
-        ali = Alignment(boid, i) * aWeight;
-        total = coh + sep + ali + boid->speed * pWeight;
-        boid->speed = Normalize(total) * 3;
+        boidCalculate((*it), &coh, &sep, &ali);
+        total = coh * cW + sep * sW + ali * aW + (*it)->speed * pW;
+        (*it)->speed = Normalize(total) * 3;
     }
 }
 

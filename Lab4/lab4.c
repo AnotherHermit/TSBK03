@@ -72,40 +72,40 @@ void Key(unsigned char key,
   switch (key)
   {
     case '+':
-    	pWeight += 0.1;
-    	printf("pWeight = %f\n", pWeight);
+    	sheepGene->pWeight += 0.1;
+    	printf("pWeight = %f\n", sheepGene->pWeight);
     	break;
     case '-':
-    	pWeight -= 0.1;
-    	printf("pWeight = %f\n", pWeight);
+    	sheepGene->pWeight -= 0.1;
+    	printf("pWeight = %f\n", sheepGene->pWeight);
     	break;
 	case 'd':
-    	cWeight += 0.1;
-    	printf("cWeight = %f\n", cWeight);
+    	sheepGene->cWeight += 0.1;
+    	printf("cWeight = %f\n", sheepGene->cWeight);
     	break;
 	case 'c':
-    	cWeight -= 0.1;
-    	printf("cWeight = %f\n", cWeight);
+    	sheepGene->cWeight -= 0.1;
+    	printf("cWeight = %f\n", sheepGene->cWeight);
     	break;
 	case 's':
-    	sWeight += 0.1;
-    	printf("sWeight = %f\n", sWeight);
+    	sheepGene->sWeight += 0.1;
+    	printf("sWeight = %f\n", sheepGene->sWeight);
     	break;
 	case 'x':
-    	sWeight -= 0.1;
-    	printf("sWeight = %f\n", sWeight);
+    	sheepGene->sWeight -= 0.1;
+    	printf("sWeight = %f\n", sheepGene->sWeight);
     	break;
 	case 'a':
-		aWeight += 0.1;
-		printf("aWeight = %f\n", aWeight);
+		sheepGene->aWeight += 0.1;
+		printf("aWeight = %f\n", sheepGene->aWeight);
 		break;
 	case 'z':
-    	aWeight -= 0.1;
-    	printf("aWeight = %f\n", aWeight);
+    	sheepGene->aWeight -= 0.1;
+    	printf("aWeight = %f\n", sheepGene->aWeight);
     	break;
 	case 'b':
-    	sheepies->addBoids(1,sheepFace);
-    	printf("Added a sheep, number of sheep = %d\n", sheepies->getNum());
+    	sheepies->addBoids(1, sheepFace, sheepGene);
+    	printf("Added a sheep, number of sheep = %d\n", sheepies->size());
     	break;
     case 0x1b:
       exit(0);
@@ -121,7 +121,10 @@ void Init()
 	dogFace = GetFace("Lab4/tex/dog.tga"); // En hund
 	foodFace = GetFace("Lab4/tex/mat.tga"); // Mat
 
-	sheepies = new BoidHandler(6, sheepFace);
+	sheepGene = new BoidGene;
+	blackGene = new BoidGene;
+
+	sheepies = new BoidHandler(6, sheepFace, sheepGene);
 }
 
 int main(int argc, char **argv)
