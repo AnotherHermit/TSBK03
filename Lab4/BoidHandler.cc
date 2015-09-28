@@ -1,13 +1,10 @@
 #include "BoidHandler.h"
 #include "Boid.h"
-#include <iterator>
-#include <stdlib.h>
-#include <time.h>
+
 #include <iostream>
 
 BoidHandler::BoidHandler(int numBoids, TextureData *f, BoidGene *g)
 {
-    srand (time(NULL));
     addBoids(numBoids, f, g);
 }
 
@@ -26,7 +23,7 @@ void BoidHandler::addBoids(int numBoids, TextureData *f, BoidGene *g)
 {
     for(int i = 0; i < numBoids; i++)
     {
-        Boid *temp = new Sheep(f, g);
+        Object *temp = new Sheep(f, g);
         boids.push_back(temp);
     }
 }

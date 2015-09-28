@@ -1,8 +1,10 @@
 #ifndef BOID_H
 #define BOID_H
 
-#include "LoadTGA.h"
 #include <vector>
+
+#include "LoadTGA.h"
+
 #include "SpriteLight.h"
 
 enum GeneData
@@ -27,25 +29,16 @@ typedef struct BoidGene
 
 } BoidGene;
 
-class Boid
+class Boid : public Drawable
 {
 protected:
-	FPoint position;
 	FPoint speed;
-	GLfloat rotation;
 
-    TextureData *face;
-
-	Boid(TextureData *f);
-	Boid(TextureData *f, FPoint pos, FPoint spd);
-
+	void init(TextureData *f, FPoint pos, FPoint spd);
 public:
-    virtual void update(std::vector<Boid*> &allBoids) = 0;
-    void move();
-    void draw();
+	virtual void move();
 
-	FPoint getPos();
-	FPoint getSpd();
+	virtual FPoint getSpd();
 };
 
 class Sheep : public Boid
@@ -54,10 +47,18 @@ class Sheep : public Boid
 
 public:
 	Sheep(TextureData *f, BoidGene *g);
-	Sheep(TextureData *f, FPoint pos, FPoint spd, BoidGene *g);
+	Sheep(TextureData *f, BoidGene *g, FPoint pos, FPoint spd);
+
+	virtual void update(std::vector<Object*> &allBoids);
+};
+
+class Dog : public Boid
+{
+public:
+	Dog(TextureData *f);
+	Dog(TextureData *f, FPoint pos, FPoint spd);
 
 	virtual void update(std::vector<Boid*> &allBoids);
 };
-
 
 #endif // BOID_H

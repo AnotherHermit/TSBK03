@@ -10,7 +10,7 @@ float getRandom(int min, int max);
 
 class BoidHandler
 {
-    std::vector<Boid*> boids;
+    std::vector<Object*> boids;
 
 public:
     BoidHandler(int numBoids, TextureData *f, BoidGene *g);

@@ -5,11 +5,13 @@
 // What does a mogwai say when it sees a can of soda?
 // Eeek! Sprite light! Sprite light!
 
-#include "SpriteLight.h"
-#include "LoadTGA.h"
 #include <math.h>
+
 #include "VectorUtils3.h"
 #include "GL_utilities.h"
+#include "LoadTGA.h"
+
+#include "SpriteLight.h"
 
 // Globals: The background texture and viewport dimensions (virtual or real pixels)
 GLuint backgroundTexID = 0;
@@ -115,24 +117,34 @@ TextureData *GetFace(const char *fileName)
 	return fp;
 }
 
-void DrawSprite(TextureData *f, FPoint pos, GLfloat rotation)
+void Drawable::draw()
 {
 	mat4 trans, rot, scale, m;
 
 	glUseProgram(program);
 	// Update matrices
-	scale = S((float)f->width/gWidth * 2, (float)f->height/gHeight * 2, 1);
+	scale = S((float)face->width/gWidth * 2, (float)face->height/gHeight * 2, 1);
 //	trans = T(sp->position.h/gWidth, sp->position.v/gHeight, 0);
-	trans = T(pos.h/gWidth * 2 - 1, pos.v/gHeight * 2 - 1, 0);
+	trans = T(position.h/gWidth * 2 - 1, position.v/gHeight * 2 - 1, 0);
 	rot = Rz(rotation * 3.14 / 180);
 	m = Mult(trans, Mult(scale, rot));
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "m"), 1, GL_TRUE, m.m);
-	glBindTexture(GL_TEXTURE_2D, f->texID);
+	glBindTexture(GL_TEXTURE_2D, face->texID);
 
 	// Draw
 	glBindVertexArray(vertexArrayObjID);	// Select VAO
 	glDrawArrays(GL_TRIANGLES, 0, 6);	// draw object
+}
+
+FPoint Drawable::getPos()
+{
+	return position;
+}
+
+GLfloat Drawable::getRot()
+{
+	return rotation;
 }
 
 void DrawBackground()

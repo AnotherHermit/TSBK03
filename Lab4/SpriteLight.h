@@ -25,6 +25,8 @@
 	#endif
 #endif
 
+#include <vector>
+
 #include "LoadTGA.h"
 
 typedef struct FPoint
@@ -56,9 +58,36 @@ FPoint Clamp(FPoint a, float c);
 extern GLuint backgroundTexID;
 extern long gWidth, gHeight;
 
+// Base class for all drawavle objects
+class Object
+{
+public:
+	virtual void update(std::vector<Object*> &allBoids) = 0;
+	virtual void move() = 0;
+	virtual void draw() = 0;
+
+	virtual FPoint getPos() = 0;
+	virtual FPoint getSpd() = 0;
+	virtual GLfloat getRot() = 0;
+};
+
+
+class Drawable : public Object
+{
+protected:
+	FPoint position;
+	GLfloat rotation;
+    TextureData *face;
+
+public:
+	virtual void draw();
+
+	virtual FPoint getPos();
+	virtual GLfloat getRot();
+};
+
 // Functions
 TextureData *GetFace(const char *fileName);
-void DrawSprite(TextureData *f, FPoint pos, GLfloat rotation);
 void DrawBackground();
 
 void InitSpriteLight();

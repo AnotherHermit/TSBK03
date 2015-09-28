@@ -1,11 +1,12 @@
+// Rand and Srand
+#include <stdlib.h>
+#include <math.h>
+#include <vector>
+
 #include "Boid.h"
 #include "SpriteLight.h"
 
-// Rand and Srand
-#include <stdlib.h>
-#include <time.h>
-#include <math.h>
-#include <vector>
+#include <iostream>
 
 float getRandom(int min, int max)
 {
@@ -34,19 +35,13 @@ BoidGene::BoidGene()
 
 // ===== Boid ======
 
-Boid::Boid(TextureData *f)
-    : rotation(0), face(f)
+void Boid::init(TextureData *f, FPoint pos, FPoint spd)
 {
-    FPoint pos(getRandom(0,gWidth), getRandom(0,gHeight));
-    FPoint spd(getRandom(-1,1), getRandom(-1,1));
-
     position = pos;
     speed = spd;
+    rotation = 0;
+    face = f;
 }
-
-Boid::Boid(TextureData *f, FPoint pos, FPoint spd)
-    : position(pos), speed(spd), rotation(0), face(f)
-{}
 
 // A simple movement
 void Boid::move()
@@ -77,16 +72,6 @@ void Boid::move()
 	rotation = atan2(speed.v, speed.h) * 180.0/3.1416;
 }
 
-void Boid::draw()
-{
-    DrawSprite(face, position, rotation);
-}
-
-FPoint Boid::getPos()
-{
-    return position;
-}
-
 FPoint Boid::getSpd()
 {
     return speed;
@@ -97,14 +82,21 @@ FPoint Boid::getSpd()
 // ===== Sheep =====
 
 Sheep::Sheep(TextureData *f, BoidGene *g)
-    : Boid(f), gene(g)
-{}
+    : Boid(), gene(g)
+{
+    FPoint pos(getRandom(0,gWidth), getRandom(0,gHeight));
+    FPoint spd(getRandom(-1,1), getRandom(-1,1));
 
-Sheep::Sheep(TextureData *f, FPoint pos, FPoint spd, BoidGene *g)
-    : Boid(f, pos, spd), gene(g)
-{}
+    init(f, pos, spd);
+}
 
-void Sheep::update(std::vector<Boid*> &allBoids)
+Sheep::Sheep(TextureData *f, BoidGene *g, FPoint pos, FPoint spd)
+    : Boid(), gene(g)
+{
+    init(f, pos, spd);
+}
+
+void Sheep::update(std::vector<Object*> &allBoids)
 {
     FPoint c, s, a, r, p;
     FPoint dir;
@@ -171,3 +163,27 @@ void Sheep::update(std::vector<Boid*> &allBoids)
 }
 
 // ===== End Sheep =====
+
+// ===== Dog =====
+
+Dog::Dog(TextureData *f)
+    : Boid()
+{
+    FPoint pos(getRandom(0,gWidth), getRandom(0,gHeight));
+    FPoint spd(getRandom(-1,1), getRandom(-1,1));
+
+    init(f, pos, spd);
+}
+
+Dog::Dog(TextureData *f, FPoint pos, FPoint spd)
+    : Boid()
+{
+    init(f, pos, spd);
+}
+
+void Dog::update(std::vector<Boid*> &allBoids)
+{
+    
+}
+
+// ===== End Dog =====

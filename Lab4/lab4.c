@@ -21,12 +21,12 @@
 #endif
 
 #include <stdlib.h>
+#include <time.h>
+
 #include "LoadTGA.h"
-#include "SpriteLight.h"
 #include "GL_utilities.h"
 
-#include <iostream>
-
+#include "SpriteLight.h"
 #include "BoidHandler.h"
 
 // L�gg till egna globaler h�r efter behov.
@@ -113,6 +113,8 @@ void Key(unsigned char key,
 
 void Init()
 {
+	srand(time(NULL)); // Seed the random function
+
 	LoadTGATextureSimple("Lab4/tex/leaves.tga", &backgroundTexID); // Bakgrund
 
 	sheepFace = GetFace("Lab4/tex/sheep.tga"); // Ett f�r
