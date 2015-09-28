@@ -35,7 +35,7 @@ LAB2=Lab2/skinning.c
 LAB22=Lab2/skinning2.c
 LAB3=Lab3/lab3.c
 LAB4=Lab4/lab4.c
-LAB4E = $(LAB4) Lab4/SpriteLight.c Lab4/BoidHandler.cc
+LAB4E = $(LAB4) Lab4/*.cc
 
 #Output location
 BIN=bin

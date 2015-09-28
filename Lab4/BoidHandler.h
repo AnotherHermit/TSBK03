@@ -4,28 +4,23 @@
 #include <vector>
 
 #include "SpriteLight.h"
-
+#include "Boid.h"
 
 float getRandom(int min, int max);
 
 class BoidHandler
 {
-    std::vector<float> distDiff;
-    std::vector<SpriteRec*> boids;
-
-    FPoint boidCalculate(SpriteRec *b);
+    std::vector<Boid*> boids;
 
 public:
     BoidHandler(int numBoids, TextureData *f, BoidGene *g);
     ~BoidHandler();
 
-    void updateDist();
     void addBoids(int numBoids, TextureData *f, BoidGene *g);
-    float getDist(int boidA, int boidB);
-    SpriteRec* getBoid(int boid);
+    Boid* getBoid(int boidID);
     unsigned int size();
     void boidBehave();
-    void boidHandleDraw();
+    void boidMoveDraw();
 };
 
 

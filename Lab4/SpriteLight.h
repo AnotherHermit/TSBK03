@@ -26,22 +26,6 @@
 #endif
 
 #include "LoadTGA.h"
-#include <iostream>
-#include <math.h>
-
-typedef struct BoidGene
-{
-    float cMaxDist = 100.0f;
-    float sMaxDist = 20.0f;
-    float aMaxDist = 70.0f;
-    float cWeight = 0.5f;
-    float sWeight = 1.0f;
-    float aWeight = 0.5f;
-	float rWeight = 0.0f;
-    float pWeight = 10.0f;
-	float speed   = 1.0f;
-
-} BoidGene;
 
 typedef struct FPoint
 {
@@ -68,28 +52,13 @@ typedef struct FPoint
 FPoint Normalize(FPoint a);
 FPoint Clamp(FPoint a, float c);
 
-typedef struct SpriteRec
-{
-	FPoint position;
-	TextureData *face;
-	FPoint speed;
-	GLfloat rotation;
-
-	// Add custom sprite data here as needed
-	int ID;
-	BoidGene* gene;
-
-} SpriteRec, *SpritePtr;
-
 // Globals: The background texture and viewport dimensions (virtual or real pixels)
 extern GLuint backgroundTexID;
 extern long gWidth, gHeight;
 
 // Functions
 TextureData *GetFace(const char *fileName);
-struct SpriteRec *NewSprite(TextureData *f, FPoint pos, FPoint spd, BoidGene *g, int id);
-void HandleSprite(SpritePtr sp);
-void DrawSprite(SpritePtr sp);
+void DrawSprite(TextureData *f, FPoint pos, GLfloat rotation);
 void DrawBackground();
 
 void InitSpriteLight();

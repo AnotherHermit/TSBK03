@@ -115,67 +115,20 @@ TextureData *GetFace(const char *fileName)
 	return fp;
 }
 
-struct SpriteRec *NewSprite(TextureData *f, FPoint pos, FPoint spd, BoidGene* g, int id)
-{
-	SpritePtr sp;
-
-	sp = (SpriteRec *)malloc(sizeof(SpriteRec));
-
-	sp->position = pos;
-	sp->speed = spd;
-	sp->face = f;
-	sp->rotation = 0;
-
-
-	sp->gene = g;
-	sp->ID = id;
-
-	return sp;
-}
-
-// A simple movement
-void HandleSprite(SpritePtr sp)
-{
-// Move by speed, bounce off screen edges.
-	sp->position = sp->position + sp->speed;
-	if (sp->position.h < 0)
-	{
-		sp->speed.h = fabs(sp->speed.h);
-		sp->position.h = 0;
-	}
-	if (sp->position.v < 0)
-	{
-		sp->speed.v = fabs(sp->speed.v);
-		sp->position.v = 0;
-	}
-	if (sp->position.h > gWidth)
-	{
-		sp->speed.h = -fabs(sp->speed.h);
-		sp->position.h = gWidth;
-	}
-	if (sp->position.v > gHeight)
-	{
-		sp->speed.v = -fabs(sp->speed.v);
-		sp->position.v = gHeight;
-	}
-
-	sp->rotation = atan2(sp->speed.v, sp->speed.h) * 180.0/3.1416;
-}
-
-void DrawSprite(SpritePtr sp)
+void DrawSprite(TextureData *f, FPoint pos, GLfloat rotation)
 {
 	mat4 trans, rot, scale, m;
 
 	glUseProgram(program);
 	// Update matrices
-	scale = S((float)sp->face->width/gWidth * 2, (float)sp->face->height/gHeight * 2, 1);
+	scale = S((float)f->width/gWidth * 2, (float)f->height/gHeight * 2, 1);
 //	trans = T(sp->position.h/gWidth, sp->position.v/gHeight, 0);
-	trans = T(sp->position.h/gWidth * 2 - 1, sp->position.v/gHeight * 2 - 1, 0);
-	rot = Rz(sp->rotation * 3.14 / 180);
+	trans = T(pos.h/gWidth * 2 - 1, pos.v/gHeight * 2 - 1, 0);
+	rot = Rz(rotation * 3.14 / 180);
 	m = Mult(trans, Mult(scale, rot));
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "m"), 1, GL_TRUE, m.m);
-	glBindTexture(GL_TEXTURE_2D, sp->face->texID);
+	glBindTexture(GL_TEXTURE_2D, f->texID);
 
 	// Draw
 	glBindVertexArray(vertexArrayObjID);	// Select VAO

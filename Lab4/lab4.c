@@ -45,9 +45,8 @@ void Display()
 
 	DrawBackground();
 
-	sheepies->updateDist();
 	sheepies->boidBehave();
-	sheepies->boidHandleDraw();
+	sheepies->boidMoveDraw();
 
 	glutSwapBuffers();
 }
@@ -72,36 +71,36 @@ void Key(unsigned char key,
   switch (key)
   {
     case '+':
-    	sheepGene->pWeight += 0.1;
-    	printf("pWeight = %f\n", sheepGene->pWeight);
+    	sheepGene->data[PRV_WEIGHT] += 0.1;
+    	printf("pWeight = %f\n", sheepGene->data[PRV_WEIGHT]);
     	break;
     case '-':
-    	sheepGene->pWeight -= 0.1;
-    	printf("pWeight = %f\n", sheepGene->pWeight);
+    	sheepGene->data[PRV_WEIGHT] -= 0.1;
+    	printf("pWeight = %f\n", sheepGene->data[PRV_WEIGHT]);
     	break;
 	case 'd':
-    	sheepGene->cWeight += 0.1;
-    	printf("cWeight = %f\n", sheepGene->cWeight);
+    	sheepGene->data[COH_WEIGHT] += 0.1;
+    	printf("cWeight = %f\n", sheepGene->data[COH_WEIGHT]);
     	break;
 	case 'c':
-    	sheepGene->cWeight -= 0.1;
-    	printf("cWeight = %f\n", sheepGene->cWeight);
+    	sheepGene->data[COH_WEIGHT] -= 0.1;
+    	printf("cWeight = %f\n", sheepGene->data[COH_WEIGHT]);
     	break;
 	case 's':
-    	sheepGene->sWeight += 0.1;
-    	printf("sWeight = %f\n", sheepGene->sWeight);
+    	sheepGene->data[SEP_WEIGHT] += 0.1;
+    	printf("sWeight = %f\n", sheepGene->data[SEP_WEIGHT]);
     	break;
 	case 'x':
-    	sheepGene->sWeight -= 0.1;
-    	printf("sWeight = %f\n", sheepGene->sWeight);
+    	sheepGene->data[SEP_WEIGHT] -= 0.1;
+    	printf("sWeight = %f\n", sheepGene->data[SEP_WEIGHT]);
     	break;
 	case 'a':
-		sheepGene->aWeight += 0.1;
-		printf("aWeight = %f\n", sheepGene->aWeight);
+		sheepGene->data[ALI_WEIGHT] += 0.1;
+		printf("aWeight = %f\n", sheepGene->data[ALI_WEIGHT]);
 		break;
 	case 'z':
-    	sheepGene->aWeight -= 0.1;
-    	printf("aWeight = %f\n", sheepGene->aWeight);
+    	sheepGene->data[ALI_WEIGHT] -= 0.1;
+    	printf("aWeight = %f\n", sheepGene->data[ALI_WEIGHT]);
     	break;
 	case 'b':
     	sheepies->addBoids(1, sheepFace, sheepGene);
@@ -121,11 +120,11 @@ void Init()
 	dogFace = GetFace("Lab4/tex/dog.tga"); // En hund
 	foodFace = GetFace("Lab4/tex/mat.tga"); // Mat
 
-	sheepGene = new BoidGene;
-	blackGene = new BoidGene;
-	blackGene->rWeight = 0.5f;
+	sheepGene = new BoidGene();
+	blackGene = new BoidGene();
+	blackGene->data[RND_WEIGHT] = 0.5f;
 	//blackGene->cWeight = 0.0f;
-	blackGene->aWeight = 0.0f;
+	blackGene->data[ALI_WEIGHT] = 0.0f;
 
 	sheepies = new BoidHandler(10, sheepFace, sheepGene);
 	sheepies->addBoids(1, blackFace, blackGene);
