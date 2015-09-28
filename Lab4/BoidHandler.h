@@ -13,10 +13,11 @@ class BoidHandler
     std::vector<Object*> boids;
 
 public:
-    BoidHandler(int numBoids, TextureData *f, BoidGene *g);
+    BoidHandler() {}
     ~BoidHandler();
 
-    void addBoids(int numBoids, TextureData *f, BoidGene *g);
+    void addSheep(int numBoids, TextureData *f, BoidGene *g);
+    void addDog(int numBoids, TextureData *f, BoidGene *g);
     unsigned int size();
     void boidBehave();
     void boidMoveDraw();

@@ -22,11 +22,12 @@ BoidGene::BoidGene()
 	data[COH_DIST] = 100.0f;
 	data[SEP_DIST] = 20.0f;
 	data[ALI_DIST] = 70.0f;
-	data[MAX_DIST] = fmax(fmax(data[COH_DIST], data[SEP_DIST]), data[ALI_DIST]);
+	data[FEA_DIST] = 120.0f;
 	data[COH_WEIGHT] = 0.5f;
 	data[SEP_WEIGHT] = 1.0f;
 	data[ALI_WEIGHT] = 0.5f;
 	data[RND_WEIGHT] = 0.0f;
+    data[FEA_WEIGHT] = 3.0f;
 	data[PRV_WEIGHT] = 10.0f;
 	data[SPEED] = 1.0f;
 }
@@ -35,12 +36,13 @@ BoidGene::BoidGene()
 
 // ===== Boid ======
 
-void Boid::init(TextureData *f, FPoint pos, FPoint spd)
+void Boid::init(TextureData *f, BoidGene *g, FPoint pos, FPoint spd)
 {
     position = pos;
     speed = spd;
     rotation = 0;
     face = f;
+    gene = g;
 }
 
 // A simple movement
@@ -82,57 +84,74 @@ FPoint Boid::getSpd()
 // ===== Sheep =====
 
 Sheep::Sheep(TextureData *f, BoidGene *g)
-    : Boid(), gene(g)
+    : Boid()
 {
     FPoint pos(getRandom(0,gWidth), getRandom(0,gHeight));
     FPoint spd(getRandom(-1,1), getRandom(-1,1));
 
-    init(f, pos, spd);
+    init(f, g, pos, spd);
 }
 
 Sheep::Sheep(TextureData *f, BoidGene *g, FPoint pos, FPoint spd)
-    : Boid(), gene(g)
+    : Boid()
 {
-    init(f, pos, spd);
+    init(f, g, pos, spd);
 }
 
 void Sheep::update(std::vector<Object*> &allBoids)
 {
-    FPoint c, s, a, r, p;
+    FPoint c, s, a, r, f, p;
     FPoint dir;
     float dist, scaling;
     int totalNum = 0;
 
     float sD = gene->data[SEP_DIST];
+    float fD = gene->data[FEA_DIST];
 
     // Calculate the cohesion, separation and alignment vectors from the
     // distances to all other boids;
     for(auto it = allBoids.begin(); it != allBoids.end(); it++)
     {
-        if ((*it) != this)
+        if((*it) != this)
         {
+            // Check type of incoming boid
+            Dog* isDog = dynamic_cast<Dog*>(*it);
+            Sheep* isSheep = dynamic_cast<Sheep*>(*it);
+
             dist = (position - (*it)->getPos()).norm();
 
-            // Cohesion calculates vector towards center of mass
-            if(dist < gene->data[COH_DIST])
+            // Sheep-Dog interaction
+            if(isDog)
             {
-                c += (*it)->getPos();
-                totalNum++;
+                if(dist < fD)
+                {
+                    scaling = (fD - dist) / fD;
+                    dir = Normalize(position - (*it)->getPos());
+                    f += dir * scaling;
+                }
             }
-
-            // Separation calculates vector pointing away from close boids
-            if(dist < sD)
+            // Sheep-Sheep interactions
+            else if (isSheep)
             {
-                scaling = (sD - dist) / sD;
-                dir = position - (*it)->getPos();
-                s += dir * scaling;
-            }
-
-            // Alignment calculates average direction of travel
-            if(dist < gene->data[ALI_DIST])
-            {
-                dir = Normalize((*it)->getSpd());
-                a += dir;
+                // Cohesion calculates vector towards center of mass
+                if(dist < gene->data[COH_DIST])
+                {
+                    c += (*it)->getPos();
+                    totalNum++;
+                }
+                // Separation calculates vector pointing away from close boids
+                if(dist < sD)
+                {
+                    scaling = (sD - dist) / sD;
+                    dir = Normalize(position - (*it)->getPos());
+                    s += dir * scaling;
+                }
+                // Alignment calculates average direction of travel
+                if(dist < gene->data[ALI_DIST])
+                {
+                    dir = Normalize((*it)->getSpd());
+                    a += dir;
+                }
             }
         }
     }
@@ -152,38 +171,50 @@ void Sheep::update(std::vector<Object*> &allBoids)
     s.normalize();
     a.normalize();
     r.normalize();
+    f.normalize();
 
     c *= gene->data[COH_WEIGHT]; // Cohesion
     s *= gene->data[SEP_WEIGHT]; // Separation
     a *= gene->data[ALI_WEIGHT]; // Alignment
     r *= gene->data[RND_WEIGHT]; // Random direction
+    f *= gene->data[FEA_WEIGHT]; // Fear
     p  = speed * gene->data[PRV_WEIGHT]; // Previous speed
 
-    speed = Normalize(p + c + s + a + r) * gene->data[SPEED];
+    speed = Normalize(p + c + s + a + r + f) * gene->data[SPEED];
 }
 
 // ===== End Sheep =====
 
 // ===== Dog =====
 
-Dog::Dog(TextureData *f)
+Dog::Dog(TextureData *f, BoidGene *g)
     : Boid()
 {
     FPoint pos(getRandom(0,gWidth), getRandom(0,gHeight));
     FPoint spd(getRandom(-1,1), getRandom(-1,1));
 
-    init(f, pos, spd);
+    init(f, g, pos, spd);
 }
 
-Dog::Dog(TextureData *f, FPoint pos, FPoint spd)
+Dog::Dog(TextureData *f, BoidGene *g, FPoint pos, FPoint spd)
     : Boid()
 {
-    init(f, pos, spd);
+    init(f, g, pos, spd);
 }
 
-void Dog::update(std::vector<Boid*> &allBoids)
+void Dog::update(std::vector<Object*> &allBoids)
 {
-    
+    FPoint r, p;
+    // Create a random movement
+    r = FPoint(getRandom(-1,1), getRandom(-1,1));
+
+    // Normalize to make the weights matter
+    r.normalize();
+
+    r *= gene->data[RND_WEIGHT]; // Random direction
+    p  = speed * gene->data[PRV_WEIGHT]; // Previous speed
+
+    speed = Normalize(p + r) * gene->data[SPEED];
 }
 
 // ===== End Dog =====

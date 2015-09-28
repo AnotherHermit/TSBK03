@@ -31,8 +31,8 @@
 
 // L�gg till egna globaler h�r efter behov.
 TextureData *sheepFace, *blackFace, *dogFace, *foodFace;
-BoidGene *sheepGene, *blackGene;
-BoidHandler *sheepies;
+BoidGene *sheepGene, *blackGene, *dogGene;
+BoidHandler *boidz;
 
 // Drawing routine
 void Display()
@@ -45,8 +45,8 @@ void Display()
 
 	DrawBackground();
 
-	sheepies->boidBehave();
-	sheepies->boidMoveDraw();
+	boidz->boidBehave();
+	boidz->boidMoveDraw();
 
 	glutSwapBuffers();
 }
@@ -103,8 +103,8 @@ void Key(unsigned char key,
     	printf("aWeight = %f\n", sheepGene->data[ALI_WEIGHT]);
     	break;
 	case 'b':
-    	sheepies->addBoids(1, sheepFace, sheepGene);
-    	printf("Added a sheep, number of sheep = %d\n", sheepies->size());
+    	boidz->addSheep(1, sheepFace, sheepGene);
+    	printf("Added a sheep, number of sheep = %d\n", boidz->size());
     	break;
     case 0x1b:
       exit(0);
@@ -123,13 +123,21 @@ void Init()
 	foodFace = GetFace("Lab4/tex/mat.tga"); // Mat
 
 	sheepGene = new BoidGene();
+
 	blackGene = new BoidGene();
 	blackGene->data[RND_WEIGHT] = 0.5f;
 	//blackGene->cWeight = 0.0f;
 	blackGene->data[ALI_WEIGHT] = 0.0f;
 
-	sheepies = new BoidHandler(10, sheepFace, sheepGene);
-	sheepies->addBoids(1, blackFace, blackGene);
+	dogGene = new BoidGene();
+	dogGene->data[RND_WEIGHT] = 1.0f;
+	dogGene->data[PRV_WEIGHT] = 2.0f;
+	dogGene->data[SPEED] = 3.0f;
+
+	boidz = new BoidHandler();
+	boidz->addSheep(10, sheepFace, sheepGene);
+	boidz->addSheep(1, blackFace, blackGene);
+	boidz->addDog(2, dogFace, dogGene);
 }
 
 int main(int argc, char **argv)

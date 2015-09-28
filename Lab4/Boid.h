@@ -12,11 +12,12 @@ enum GeneData
 	COH_DIST,
 	SEP_DIST,
 	ALI_DIST,
-	MAX_DIST,
+	FEA_DIST,
 	COH_WEIGHT,
 	SEP_WEIGHT,
 	ALI_WEIGHT,
 	RND_WEIGHT,
+	FEA_WEIGHT,
 	PRV_WEIGHT,
 	SPEED,
 	N_GENE_DATA
@@ -33,8 +34,10 @@ class Boid : public Drawable
 {
 protected:
 	FPoint speed;
+    BoidGene* gene;
 
-	void init(TextureData *f, FPoint pos, FPoint spd);
+	void init(TextureData *f, BoidGene *g, FPoint pos, FPoint spd);
+
 public:
 	virtual void move();
 
@@ -43,8 +46,6 @@ public:
 
 class Sheep : public Boid
 {
-    BoidGene* gene;
-
 public:
 	Sheep(TextureData *f, BoidGene *g);
 	Sheep(TextureData *f, BoidGene *g, FPoint pos, FPoint spd);
@@ -55,10 +56,10 @@ public:
 class Dog : public Boid
 {
 public:
-	Dog(TextureData *f);
-	Dog(TextureData *f, FPoint pos, FPoint spd);
+	Dog(TextureData *f, BoidGene *g);
+	Dog(TextureData *f, BoidGene *g, FPoint pos, FPoint spd);
 
-	virtual void update(std::vector<Boid*> &allBoids);
+	virtual void update(std::vector<Object*> &allBoids);
 };
 
 #endif // BOID_H

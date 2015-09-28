@@ -3,10 +3,7 @@
 
 #include <iostream>
 
-BoidHandler::BoidHandler(int numBoids, TextureData *f, BoidGene *g)
-{
-    addBoids(numBoids, f, g);
-}
+// BoidHandler::BoidHandler() {}
 
 // Don't forget to remove the pointers
 BoidHandler::~BoidHandler()
@@ -19,11 +16,20 @@ BoidHandler::~BoidHandler()
 }
 
 // Initialize the size of the distance matrix
-void BoidHandler::addBoids(int numBoids, TextureData *f, BoidGene *g)
+void BoidHandler::addSheep(int numBoids, TextureData *f, BoidGene *g)
 {
     for(int i = 0; i < numBoids; i++)
     {
         Object *temp = new Sheep(f, g);
+        boids.push_back(temp);
+    }
+}
+
+void BoidHandler::addDog(int numBoids, TextureData *f, BoidGene *g)
+{
+    for(int i = 0; i < numBoids; i++)
+    {
+        Object *temp = new Dog(f, g);
         boids.push_back(temp);
     }
 }
