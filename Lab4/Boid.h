@@ -29,22 +29,35 @@ typedef struct BoidGene
 
 class Boid
 {
-public:
-    FPoint position;
+protected:
+	FPoint position;
 	FPoint speed;
 	GLfloat rotation;
 
-	int ID;
-
     TextureData *face;
-    BoidGene* gene;
 
-    Boid(TextureData *f, BoidGene *g, int id);
-    Boid(TextureData *f, BoidGene *g, int id, FPoint pos, FPoint spd);
+	Boid(TextureData *f);
+	Boid(TextureData *f, FPoint pos, FPoint spd);
 
-    void update(std::vector<Boid*> &allBoids);
+public:
+    virtual void update(std::vector<Boid*> &allBoids) = 0;
     void move();
     void draw();
+
+	FPoint getPos();
+	FPoint getSpd();
 };
+
+class Sheep : public Boid
+{
+    BoidGene* gene;
+
+public:
+	Sheep(TextureData *f, BoidGene *g);
+	Sheep(TextureData *f, FPoint pos, FPoint spd, BoidGene *g);
+
+	virtual void update(std::vector<Boid*> &allBoids);
+};
+
 
 #endif // BOID_H

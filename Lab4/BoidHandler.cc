@@ -26,15 +26,9 @@ void BoidHandler::addBoids(int numBoids, TextureData *f, BoidGene *g)
 {
     for(int i = 0; i < numBoids; i++)
     {
-        Boid *temp = new Boid(f, g, size());
+        Boid *temp = new Sheep(f, g);
         boids.push_back(temp);
     }
-}
-
-// Get the pointer to a certain boid
-Boid* BoidHandler::getBoid(int boidID)
-{
-    return boids[boidID];
 }
 
 // Get the number of boids

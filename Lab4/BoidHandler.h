@@ -17,7 +17,6 @@ public:
     ~BoidHandler();
 
     void addBoids(int numBoids, TextureData *f, BoidGene *g);
-    Boid* getBoid(int boidID);
     unsigned int size();
     void boidBehave();
     void boidMoveDraw();

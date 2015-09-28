@@ -30,98 +30,23 @@ BoidGene::BoidGene()
 	data[SPEED] = 1.0f;
 }
 
-Boid::Boid(TextureData *f, BoidGene *g, int id)
+// ===== End BoidGene functions =====
+
+// ===== Boid ======
+
+Boid::Boid(TextureData *f)
+    : rotation(0), face(f)
 {
     FPoint pos(getRandom(0,gWidth), getRandom(0,gHeight));
     FPoint spd(getRandom(-1,1), getRandom(-1,1));
 
     position = pos;
     speed = spd;
-    rotation = 0;
-
-    face = f;
-    gene = g;
-
-    ID = id;
 }
 
-Boid::Boid(TextureData *f, BoidGene *g, int id, FPoint pos, FPoint spd)
-{
-    position = pos;
-    speed = spd;
-    rotation = 0;
-
-    face = f;
-    gene = g;
-
-    ID = id;
-}
-
-void Boid::update(std::vector<Boid*> &allBoids)
-{
-    FPoint c, s, a, r, p;
-    FPoint dir;
-    float dist, scaling;
-    int totalNum = 0;
-
-    float sD = gene->data[SEP_DIST];
-
-    // Calculate the cohesion, separation and alignment vectors from the
-    // distances to all other boids;
-    for(auto it = allBoids.begin(); it != allBoids.end(); it++)
-    {
-        if ((*it) != this)
-        {
-            dist = (position - (*it)->position).norm();
-
-            // Cohesion calculates vector towards center of mass
-            if(dist < gene->data[COH_DIST])
-            {
-                c += (*it)->position;
-                totalNum++;
-            }
-
-            // Separation calculates vector pointing away from close boids
-            if(dist < sD)
-            {
-                scaling = (sD - dist) / sD;
-                dir = position - (*it)->position;
-                s += dir * scaling;
-            }
-
-            // Alignment calculates average direction of travel
-            if(dist < gene->data[ALI_DIST])
-            {
-                dir = Normalize((*it)->speed);
-                a += dir;
-            }
-        }
-    }
-
-    // Only when we had boids close enough do we need to calculate cohesion
-    if(totalNum)
-    {
-        c /= (float)totalNum;
-        c -= position;
-    }
-
-    // Create a random movement
-    r = FPoint(getRandom(-1,1), getRandom(-1,1));
-
-    // Normalize to make the weights matter
-    c.normalize();
-    s.normalize();
-    a.normalize();
-    r.normalize();
-
-    c *= gene->data[COH_WEIGHT]; // Cohesion
-    s *= gene->data[SEP_WEIGHT]; // Separation
-    a *= gene->data[ALI_WEIGHT]; // Alignment
-    r *= gene->data[RND_WEIGHT]; // Random direction
-    p  = speed * gene->data[PRV_WEIGHT]; // Previous speed
-
-    speed = Normalize(p + c + s + a + r) * gene->data[SPEED];
-}
+Boid::Boid(TextureData *f, FPoint pos, FPoint spd)
+    : position(pos), speed(spd), rotation(0), face(f)
+{}
 
 // A simple movement
 void Boid::move()
@@ -157,4 +82,92 @@ void Boid::draw()
     DrawSprite(face, position, rotation);
 }
 
-// ===== End BoidGene functions =====
+FPoint Boid::getPos()
+{
+    return position;
+}
+
+FPoint Boid::getSpd()
+{
+    return speed;
+}
+
+// ===== End Boid ======
+
+// ===== Sheep =====
+
+Sheep::Sheep(TextureData *f, BoidGene *g)
+    : Boid(f), gene(g)
+{}
+
+Sheep::Sheep(TextureData *f, FPoint pos, FPoint spd, BoidGene *g)
+    : Boid(f, pos, spd), gene(g)
+{}
+
+void Sheep::update(std::vector<Boid*> &allBoids)
+{
+    FPoint c, s, a, r, p;
+    FPoint dir;
+    float dist, scaling;
+    int totalNum = 0;
+
+    float sD = gene->data[SEP_DIST];
+
+    // Calculate the cohesion, separation and alignment vectors from the
+    // distances to all other boids;
+    for(auto it = allBoids.begin(); it != allBoids.end(); it++)
+    {
+        if ((*it) != this)
+        {
+            dist = (position - (*it)->getPos()).norm();
+
+            // Cohesion calculates vector towards center of mass
+            if(dist < gene->data[COH_DIST])
+            {
+                c += (*it)->getPos();
+                totalNum++;
+            }
+
+            // Separation calculates vector pointing away from close boids
+            if(dist < sD)
+            {
+                scaling = (sD - dist) / sD;
+                dir = position - (*it)->getPos();
+                s += dir * scaling;
+            }
+
+            // Alignment calculates average direction of travel
+            if(dist < gene->data[ALI_DIST])
+            {
+                dir = Normalize((*it)->getSpd());
+                a += dir;
+            }
+        }
+    }
+
+    // Only when we had boids close enough do we need to calculate cohesion
+    if(totalNum)
+    {
+        c /= (float)totalNum;
+        c -= position;
+    }
+
+    // Create a random movement
+    r = FPoint(getRandom(-1,1), getRandom(-1,1));
+
+    // Normalize to make the weights matter
+    c.normalize();
+    s.normalize();
+    a.normalize();
+    r.normalize();
+
+    c *= gene->data[COH_WEIGHT]; // Cohesion
+    s *= gene->data[SEP_WEIGHT]; // Separation
+    a *= gene->data[ALI_WEIGHT]; // Alignment
+    r *= gene->data[RND_WEIGHT]; // Random direction
+    p  = speed * gene->data[PRV_WEIGHT]; // Previous speed
+
+    speed = Normalize(p + c + s + a + r) * gene->data[SPEED];
+}
+
+// ===== End Sheep =====
