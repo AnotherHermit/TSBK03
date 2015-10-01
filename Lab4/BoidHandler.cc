@@ -40,11 +40,11 @@ unsigned int BoidHandler::size()
     return boids.size();
 }
 
-void BoidHandler::boidBehave()
+void BoidHandler::boidBehave(GLfloat deltaT)
 {
     for(auto it = boids.begin(); it != boids.end(); it++)
     {
-        (*it)->update(boids);
+        (*it)->update(boids, deltaT);
     }
 }
 
