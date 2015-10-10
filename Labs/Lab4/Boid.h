@@ -35,6 +35,9 @@ class Boid : public Drawable
 protected:
 	FPoint speed;
     BoidGene* gene;
+    
+	GLfloat totalTime;
+    FPoint c,s,a,r,f;
 
 	void init(TextureData *f, BoidGene *g, FPoint pos, FPoint spd);
 
@@ -50,7 +53,7 @@ public:
 	Sheep(TextureData *f, BoidGene *g);
 	Sheep(TextureData *f, BoidGene *g, FPoint pos, FPoint spd);
 
-	virtual void update(std::vector<Object*> &allBoids);
+	virtual void update(std::vector<Object*> &allBoids, GLfloat deltaT);
 };
 
 class Dog : public Boid
@@ -59,7 +62,7 @@ public:
 	Dog(TextureData *f, BoidGene *g);
 	Dog(TextureData *f, BoidGene *g, FPoint pos, FPoint spd);
 
-	virtual void update(std::vector<Object*> &allBoids);
+	virtual void update(std::vector<Object*> &allBoids, GLfloat deltaT);
 };
 
 #endif // BOID_H

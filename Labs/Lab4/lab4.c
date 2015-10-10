@@ -20,6 +20,7 @@
 	#endif
 #endif
 
+#include <sys/time.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -34,6 +35,26 @@ TextureData *sheepFace, *blackFace, *dogFace, *foodFace;
 BoidGene *sheepGene, *blackGene, *dogGene;
 BoidHandler *boidz;
 
+static double startTime = 0.0;
+GLfloat deltaT = 0.0f;
+
+void resetElapsedTime()
+{
+  struct timeval timeVal;
+  gettimeofday(&timeVal, 0);
+  startTime = (double) timeVal.tv_sec + (double) timeVal.tv_usec * 0.000001;
+}
+
+float getElapsedTime()
+{
+  struct timeval timeVal;
+  gettimeofday(&timeVal, 0);
+  double currentTime = (double) timeVal.tv_sec
+    + (double) timeVal.tv_usec * 0.000001;
+
+  return currentTime - startTime;
+}
+
 // Drawing routine
 void Display()
 {
@@ -45,7 +66,7 @@ void Display()
 
 	DrawBackground();
 
-	boidz->boidBehave();
+	boidz->boidBehave(deltaT);
 	boidz->boidMoveDraw();
 
 	glutSwapBuffers();
@@ -61,6 +82,8 @@ void Reshape(int h, int v)
 void Timer(int value)
 {
 	glutTimerFunc(20, Timer, 0);
+	deltaT = getElapsedTime();
+	resetElapsedTime();
 	glutPostRedisplay();
 }
 
@@ -126,18 +149,20 @@ void Init()
 
 	blackGene = new BoidGene();
 	blackGene->data[RND_WEIGHT] = 0.5f;
-	//blackGene->cWeight = 0.0f;
+	blackGene->data[COH_WEIGHT] = 0.0f;
 	blackGene->data[ALI_WEIGHT] = 0.0f;
 
 	dogGene = new BoidGene();
-	dogGene->data[RND_WEIGHT] = 1.0f;
-	dogGene->data[PRV_WEIGHT] = 2.0f;
+	dogGene->data[RND_WEIGHT] = 0.5f;
+	dogGene->data[PRV_WEIGHT] = 1.0f;
 	dogGene->data[SPEED] = 3.0f;
 
 	boidz = new BoidHandler();
 	boidz->addSheep(10, sheepFace, sheepGene);
 	boidz->addSheep(1, blackFace, blackGene);
 	boidz->addDog(2, dogFace, dogGene);
+	
+	resetElapsedTime();
 }
 
 int main(int argc, char **argv)

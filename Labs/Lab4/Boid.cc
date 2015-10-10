@@ -98,10 +98,14 @@ Sheep::Sheep(TextureData *f, BoidGene *g, FPoint pos, FPoint spd)
     init(f, g, pos, spd);
 }
 
-void Sheep::update(std::vector<Object*> &allBoids)
+void Sheep::update(std::vector<Object*> &allBoids, GLfloat deltaT)
 {
-    FPoint c, s, a, r, f, p;
-    FPoint dir;
+    c = FPoint();
+    s = FPoint();
+    a = FPoint();
+    r = FPoint();
+    f = FPoint();        
+    FPoint dir, p;
     float dist, scaling;
     int totalNum = 0;
 
@@ -164,7 +168,13 @@ void Sheep::update(std::vector<Object*> &allBoids)
     }
 
     // Create a random movement
-    r = FPoint(getRandom(-1,1), getRandom(-1,1));
+    totalTime += deltaT;
+    if (totalTime > 1.0f)
+    {
+    	totalTime = 0.0f;
+    	r = FPoint(getRandom(-1,1), getRandom(-1,1));
+   	    r.normalize();
+	}
 
     // Normalize to make the weights matter
     c.normalize();
@@ -202,15 +212,19 @@ Dog::Dog(TextureData *f, BoidGene *g, FPoint pos, FPoint spd)
     init(f, g, pos, spd);
 }
 
-void Dog::update(std::vector<Object*> &allBoids)
+void Dog::update(std::vector<Object*> &allBoids, GLfloat deltaT)
 {
-    FPoint r, p;
+	FPoint p;
     // Create a random movement
-    r = FPoint(getRandom(-1,1), getRandom(-1,1));
-
+    totalTime += deltaT;
+    if (totalTime > 1.0f)
+    {
+    	totalTime = 0.0f;
+    	r = FPoint(getRandom(-1,1), getRandom(-1,1));
+   	    r.normalize();
+	}
+	
     // Normalize to make the weights matter
-    r.normalize();
-
     r *= gene->data[RND_WEIGHT]; // Random direction
     p  = speed * gene->data[PRV_WEIGHT]; // Previous speed
 

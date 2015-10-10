@@ -62,7 +62,7 @@ extern long gWidth, gHeight;
 class Object
 {
 public:
-	virtual void update(std::vector<Object*> &allBoids) = 0;
+	virtual void update(std::vector<Object*> &allBoids, GLfloat deltaT) = 0;
 	virtual void move() = 0;
 	virtual void draw() = 0;
 

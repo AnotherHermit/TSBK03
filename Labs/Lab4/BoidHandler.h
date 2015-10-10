@@ -19,7 +19,7 @@ public:
     void addSheep(int numBoids, TextureData *f, BoidGene *g);
     void addDog(int numBoids, TextureData *f, BoidGene *g);
     unsigned int size();
-    void boidBehave();
+    void boidBehave(GLfloat deltaT);
     void boidMoveDraw();
 };
 
