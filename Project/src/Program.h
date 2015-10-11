@@ -21,11 +21,13 @@
 
 #include "Camera.h"
 #include "Particles.h"
+#include "AntTweakBar.h"
+
 
 class Program
 {
 private:
-	SDL_Window* screen;
+	SDL_Window *screen;
 	SDL_GLContext glcontext;
 	int winWidth;
 	int winHeight;
@@ -34,11 +36,15 @@ private:
 
 	GLfloat currentTime;
 	GLfloat deltaTime;
+	GLfloat FPS;
 
-	Particles* particleSystem;
+	Particles *particleSystem;
 	bool renderModels;
 
-	Camera* cam;
+	Camera *cam;
+
+	TwBar *antBar;
+	bool mouseHidden;
 
 public:
 	Program();
@@ -49,9 +55,9 @@ public:
 
 	bool Init();
 	
-	void OnEvent(SDL_Event* Event);
-	void OnKeypress(SDL_Event* Event);
-	void OnMouseMove(SDL_Event* Event);
+	void OnEvent(SDL_Event *Event);
+	void OnKeypress(SDL_Event *Event);
+	void OnMouseMove(SDL_Event *Event);
 	void CheckKeyDowns();
 	
 	void Update();

@@ -27,6 +27,7 @@
 
 Camera::Camera(glm::vec3 startpos)
 {
+	isMoving = false;
 	p = startpos;
 
 	mspeed = 0.1f;
@@ -112,55 +113,76 @@ void Camera::Update()
 
 void Camera::MoveForward(GLfloat deltaT)
 {
-	p = p + heading * mspeed * deltaT;
-	Update();
-	UpdateCullingBox();
+	if (isMoving)
+	{
+		p = p + heading * mspeed * deltaT;
+		Update();
+		UpdateCullingBox();
+	}
 }
 void Camera::MoveBackward(GLfloat deltaT)
 {
-	p = p - heading * mspeed * deltaT;
-	Update();
-	UpdateCullingBox();
+	if (isMoving)
+	{
+		p = p - heading * mspeed * deltaT;
+		Update();
+		UpdateCullingBox();
+	}
 }
 void Camera::MoveLeft(GLfloat deltaT)
 {
-	p = p - side * mspeed * deltaT;
-	Update();
-	UpdateCullingBox();
+	if (isMoving)
+	{
+		p = p - side * mspeed * deltaT;
+		Update();
+		UpdateCullingBox();
+	}
 }
 void Camera::MoveRight(GLfloat deltaT)
 {
-	p = p + side * mspeed * deltaT;
-	Update();
-	UpdateCullingBox();
+	if (isMoving)
+	{
+		p = p + side * mspeed * deltaT;
+		Update();
+		UpdateCullingBox();
+	}
 }
 void Camera::MoveUp(GLfloat deltaT)
 {
-	p = p + up * mspeed * deltaT;
-	Update();
-	UpdateCullingBox();
+	if (isMoving)
+	{
+		p = p + up * mspeed * deltaT;
+		Update();
+		UpdateCullingBox();
+	}
 }
 void Camera::MoveDown(GLfloat deltaT)
 {
-	p = p - up * mspeed * deltaT;
-	Update();
-	UpdateCullingBox();
+	if (isMoving)
+	{
+		p = p - up * mspeed * deltaT;
+		Update();
+		UpdateCullingBox();
+	}
 }
 
 void Camera::RotateCamera(GLint dx, GLint dy)
 {
-	phi -= (float)dx * rspeed;
-	if(phi > 2.0f * M_PI )
-		phi -= 2.0f * M_PI;
-	else if(phi < 0.0f)
-		phi += 2.0f * M_PI;
-	
-	theta -= (float)dy * rspeed;
-	if(theta > M_PI / 2.1f)
-		theta = M_PI / 2.1f;
-	else if(theta < -M_PI / 2.1f)
-		theta = -M_PI / 2.1f;
+	if (isMoving)
+	{
+		phi -= (float)dx * rspeed;
+		if (phi > 2.0f * M_PI)
+			phi -= 2.0f * M_PI;
+		else if (phi < 0.0f)
+			phi += 2.0f * M_PI;
 
-	Update();
-	UpdateCullingBox();
+		theta -= (float)dy * rspeed;
+		if (theta > M_PI / 2.1f)
+			theta = M_PI / 2.1f;
+		else if (theta < -M_PI / 2.1f)
+			theta = -M_PI / 2.1f;
+
+		Update();
+		UpdateCullingBox();
+	}
 }

@@ -43,6 +43,12 @@ public:
 	void ToggleUpdate()
 	{doUpdate = !doUpdate;}
 	
+	GLuint *GetParticlesPtr()
+	{return &particles;}
+	
+	GLuint *GetDrawParticlesPtr()
+	{return &drawParticles;}
+
 	const GLint GetParticles()
 	{return particles;}
 	

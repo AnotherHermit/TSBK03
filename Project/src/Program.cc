@@ -18,6 +18,7 @@ Program::Program()
 	// Start state
 	isRunning = true;
 	renderModels = false;
+	mouseHidden = false;
 
 	// Time init
 	currentTime = (GLfloat)SDL_GetTicks();
@@ -45,6 +46,7 @@ void Program::timeUpdate()
 	GLfloat t = (GLfloat)SDL_GetTicks();
 	deltaTime = t - currentTime;
 	currentTime = t;
+	FPS = 1000.0f / deltaTime;
 }
 
 bool Program::Init()
@@ -59,7 +61,7 @@ bool Program::Init()
 	glewInit();
 
 	// Other SDL inits
-	SDL_SetRelativeMouseMode(SDL_TRUE);
+	//SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	// Set up particle system
 	renderModels = false;
@@ -68,6 +70,18 @@ bool Program::Init()
 	// Set up the camera
 	cam = new Camera(glm::vec3(0.0, 0.0, 50.0));
 	cam->SetFrustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 150.0f);
+
+	// Set up the AntBar
+	TwInit(TW_OPENGL_CORE, NULL);
+	TwWindowSize(winWidth, winWidth);
+	antBar = TwNewBar("Particles");
+	TwDefine(" Particles refresh=0.1 ");
+	TwAddVarRO(antBar, "Total Particles", TW_TYPE_INT32, particleSystem->GetParticlesPtr(), "group=Info");
+	TwAddVarRO(antBar, "Rendered Particles", TW_TYPE_INT32, particleSystem->GetDrawParticlesPtr(), "group=Info");
+	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, "group=Info");
+	TwAddVarRW(antBar, "MovSpeed", TW_TYPE_FLOAT, cam->SpeedPtr(), " min=0 max=1 step=0.001 group=Controls label='Movement speed' ");
+	TwDefine(" Particles valueswidth=fit ");
+	TwDefine(" Particles size='230 130' ");
 
 	return true;
 }
@@ -84,6 +98,12 @@ void Program::OnEvent(SDL_Event *Event)
 	case SDL_MOUSEMOTION:
 		OnMouseMove(Event);
 		break;
+	case SDL_MOUSEBUTTONDOWN:
+		TwMouseButton(TW_MOUSE_PRESSED, TW_MOUSE_LEFT);
+		break; 
+	case SDL_MOUSEBUTTONUP:
+		TwMouseButton(TW_MOUSE_RELEASED, TW_MOUSE_LEFT);
+		break;
 	default:
 		break;
 	}
@@ -91,6 +111,7 @@ void Program::OnEvent(SDL_Event *Event)
 
 void Program::OnKeypress(SDL_Event *Event)
 {
+	TwKeyPressed(Event->key.keysym.sym, TW_KMOD_NONE);
 	switch (Event->key.keysym.sym)
 	{
 	case SDLK_ESCAPE:
@@ -124,10 +145,15 @@ void Program::OnKeypress(SDL_Event *Event)
 		renderModels = !renderModels;
 		break;
 	case SDLK_l:
-		SDL_SetRelativeMouseMode(SDL_FALSE);
-		break;
-	case SDLK_h:
-		SDL_SetRelativeMouseMode(SDL_TRUE);
+		if (mouseHidden){
+			cam->SetMovement(false);
+			SDL_SetRelativeMouseMode(SDL_FALSE);
+			mouseHidden = false;
+		}else{
+			cam->SetMovement(true);
+			SDL_SetRelativeMouseMode(SDL_TRUE);
+			mouseHidden = true;
+		}
 		break;
 	default:
 		break;
@@ -136,6 +162,8 @@ void Program::OnKeypress(SDL_Event *Event)
 
 void Program::OnMouseMove(SDL_Event *Event)
 {
+	if (!mouseHidden)
+		TwMouseMotion(Event->motion.x, Event->motion.y);
 	cam->RotateCamera(Event->motion.xrel, Event->motion.yrel);
 }
 
@@ -180,11 +208,14 @@ void Program::Render()
 	else
 		particleSystem->DrawBillboards(cam->GetProj(), cam->GetWorldView(), cam->GetPos());
 
+	TwDraw();
+
 	SDL_GL_SwapWindow(screen);
 }
 
 void Program::Clean()
 {
+	TwTerminate();
 	SDL_GL_DeleteContext(glcontext);
 	SDL_Quit();
 }

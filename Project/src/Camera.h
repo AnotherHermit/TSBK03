@@ -4,6 +4,7 @@
 #include "GL_utilities.h"
 
 #include "glm.hpp"
+#include "gtc/type_ptr.hpp"
 
 #include <vector>
 
@@ -13,6 +14,7 @@ private:
 	glm::vec3 p,lookp;
 	glm::vec3 heading, side, up;
 	GLfloat mspeed, rspeed, phi, theta;
+	bool isMoving;
 	
 	std::vector<glm::vec4> nontransPoints;
 	std::vector<glm::vec3> nontransNormals;
@@ -38,7 +40,10 @@ public:
 	void MoveUp(GLfloat deltaT);
 	void MoveDown(GLfloat deltaT);
 	void RotateCamera(GLint dx, GLint dy);
-		
+
+	void SetMovement(bool shouldMove)
+	{isMoving = shouldMove;}
+
 	const GLfloat* GetCullingNormals()
 	{return normals;}
 	
@@ -62,6 +67,12 @@ public:
 
 	const glm::vec3 GetUp()
 	{return up;}
+
+	GLfloat *SpeedPtr()
+	{return &mspeed;}
+
+	GLfloat *HeadingPtr()
+	{return glm::value_ptr(heading);}
 };
 
 #endif
