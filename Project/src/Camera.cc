@@ -34,7 +34,7 @@ Camera::Camera(glm::vec3 startpos)
 	rspeed = 0.001f;
 	phi = 0;
 	theta = 0;
-	
+
 	// Set starting worldView matrix
 	Update();
 }
@@ -45,7 +45,7 @@ void Camera::ResetCamera(glm::vec3 pos)
 
 	phi = 0;
 	theta = 0;
-	
+
 	// Set starting worldView matrix
 	Update();
 	UpdateCullingBox();
@@ -54,15 +54,15 @@ void Camera::ResetCamera(glm::vec3 pos)
 void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GLfloat in_top, GLfloat in_near, GLfloat in_far)
 {
 	proj = glm::frustum(in_left, in_right, in_bottom, in_top, in_near, in_far);
-	
+
 	// Add all normals and vectors before transformation
 	// Add order is left, right, bottom, top, far. The near plane check is skipped.
 	// All normals are pointing inwards towards the center of the frustum.
 	for(int i = 0; i < 4; i++)
 		nontransPoints.push_back(glm::vec4(0.0, 0.0, 0.0, 1.0));
-		
+
 	nontransPoints.push_back(glm::vec4(0.0, 0.0, -in_far, 1.0));
-	
+
 	// The near corners of the frustum
 	glm::vec3 a = glm::vec3(in_left, in_top, -in_near);
 	glm::vec3 b = glm::vec3(in_right, in_top, -in_near);
@@ -74,7 +74,7 @@ void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GL
 	nontransNormals.push_back(glm::cross(c, d));
 	nontransNormals.push_back(glm::cross(d, a));
 	nontransNormals.push_back(glm::vec3(0.0, 0.0, 1.0));
-	
+
 	UpdateCullingBox();
 }
 
@@ -82,8 +82,9 @@ void Camera::UpdateCullingBox()
 {
 	for(int i = 0; i < 5; i++)
 	{
-		glm::vec3 transNormals = glm::normalize(glm::mat3(glm::inverse(worldView)) * nontransNormals[i]);
-		glm::vec4 transPoints = glm::inverse(worldView) * nontransPoints[i];
+		glm::mat4 WTVInv = glm::inverse(worldView);
+		glm::vec3 transNormals = glm::normalize(glm::mat3(WTVInv) * nontransNormals[i]);
+		glm::vec4 transPoints = WTVInv * nontransPoints[i];
 
 		normals[3*i] = transNormals.x;
 		normals[3*i+1] = transNormals.y;
@@ -99,7 +100,7 @@ void Camera::Update()
 {
 	glm::vec3 yvec = glm::vec3(0.0f, 1.0f, 0.0f);
 	glm::vec3 zvec = glm::vec3(0.0f, 0.0f, -1.0f);
-	
+
 	// Update directions
 	heading = glm::rotate(zvec, phi, yvec);
 	side = glm::cross(heading, yvec);
