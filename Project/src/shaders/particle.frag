@@ -14,7 +14,7 @@ in vec4 exPosition;
 out vec4 outColor;
 
 uniform float currT;
-uniform mat4 worldView;
+uniform mat4 WTVmatrix;
 
 void main(void)
 {
@@ -36,7 +36,7 @@ void main(void)
 	}
 	
 	// Calculate diffuse light
-	vec3 light = mat3(worldView) * vec3(0, 1, 0);
+	vec3 light = mat3(WTVmatrix) * vec3(0, 1, 0);
 	float shade = max(dot(normalize(exNormal), light), 0.10);
 	vec3 shadedColor = newColor * shade;
 	

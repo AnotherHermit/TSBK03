@@ -1,37 +1,58 @@
 ﻿#ifndef DRAWABLE
 #define DRAWABLE
 
+#include "Camera.h"
 
 #include "loadobj.h"
+
 #include "glm.hpp"
 
-class Drawable
-{
+// ===== Drawable base class ===== \\
+
+class Drawable {
 protected:
+	Camera* cam;
+public:
+	Drawable() {}
+	
+	virtual bool Init(Camera* cam, GLuint buffer) = 0;
+	virtual void Update(GLfloat t) = 0;
+	virtual void Draw(GLuint num) = 0;
+};
+
+// ===== Sphere class ===== \\
+
+class Sphere : public Drawable {
+private:
 	// gl Locations
-	GLuint program, textureId;
-	
-	// Names of shader variables
-	const char* inputNames[3];
-	
+	GLuint program, cullBuffer;
 	// Model parameters
 	Model* model;
-	glm::vec3 baseColor;
-
 	// Transformation matrices
-	glm::mat4 modelWorld;
-	glm::mat4 modelInit;
-	
+	glm::mat4 MTWmatrix;
+
 public:
-	Drawable();
-	
-	void SetProgram(const char** shaderLoc);
-	void SetModel(const char* modelLoc, glm::mat4 initTransform);
-	void SetTexture(const char* textureLoc);
-	void SetColor(glm::vec3 colorVec);
-	
+	Sphere(GLfloat radius);
+
+	virtual bool Init(Camera* cam, GLuint buffer);
 	virtual void Update(GLfloat t);
-	virtual void Draw();
+	virtual void Draw(GLuint num);
+};
+
+// ===== Billboard class ===== \\
+
+class Billboard : public Drawable {
+private:
+	// gl Locations
+	GLuint program, texID, vao, cullBuffer;
+	GLfloat radius;
+
+public:
+	Billboard(GLfloat startRadius);
+
+	virtual bool Init(Camera* cam, GLuint buffer);
+	virtual void Update(GLfloat t);
+	virtual void Draw(GLuint num);
 };
 
 #endif

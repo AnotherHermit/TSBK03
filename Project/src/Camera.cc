@@ -1,20 +1,20 @@
 ﻿#include "Camera.h"
 
 #ifdef __APPLE__
-	#include <OpenGL/gl3.h>
-	#include <SDL2/SDL.h>
+#include <OpenGL/gl3.h>
+#include <SDL2/SDL.h>
 #else
-	#ifdef  __linux__
-		#define GL_GLEXT_PROTOTYPES
-		#include <GL/gl.h>
-		#include <GL/glu.h>
-		#include <GL/glx.h>
-		#include <GL/glext.h>
-		#include <SDL2/SDL.h>
-	#else
-		#include "glew.h"
-		#include "Windows/sdl2/SDL.h"
-	#endif
+#ifdef  __linux__
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glx.h>
+#include <GL/glext.h>
+#include <SDL2/SDL.h>
+#else
+#include "glew.h"
+#include "Windows/sdl2/SDL.h"
+#endif
 #endif
 
 #include <iostream>
@@ -25,40 +25,37 @@
 #include "gtx/transform.hpp"
 #include "gtx/rotate_vector.hpp"
 
-Camera::Camera(glm::vec3 startpos)
-{
-	isMoving = false;
+Camera::Camera(glm::vec3 startpos) {
+	isPaused = true;
 	p = startpos;
 
 	mspeed = 0.1f;
 	rspeed = 0.001f;
-	phi = 0;
-	theta = 0;
+	phi = M_PI;
+	theta = M_PI / 2.0f;
 
-	// Set starting worldView matrix
+	// Set starting WTVmatrix
 	Update();
 }
 
-void Camera::ResetCamera(glm::vec3 pos)
-{
+void Camera::ResetCamera(glm::vec3 pos) {
 	p = pos;
 
-	phi = 0;
-	theta = 0;
+	phi = M_PI;
+	theta = M_PI / 2.0f;
 
 	// Set starting worldView matrix
 	Update();
 	UpdateCullingBox();
 }
 
-void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GLfloat in_top, GLfloat in_near, GLfloat in_far)
-{
-	proj = glm::frustum(in_left, in_right, in_bottom, in_top, in_near, in_far);
+void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GLfloat in_top, GLfloat in_near, GLfloat in_far) {
+	VTPmatrix = glm::frustum(in_left, in_right, in_bottom, in_top, in_near, in_far);
 
 	// Add all normals and vectors before transformation
 	// Add order is left, right, bottom, top, far. The near plane check is skipped.
 	// All normals are pointing inwards towards the center of the frustum.
-	for(int i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		nontransPoints.push_back(glm::vec4(0.0, 0.0, 0.0, 1.0));
 
 	nontransPoints.push_back(glm::vec4(0.0, 0.0, -in_far, 1.0));
@@ -78,112 +75,64 @@ void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GL
 	UpdateCullingBox();
 }
 
-void Camera::UpdateCullingBox()
-{
-	for(int i = 0; i < 5; i++)
-	{
-		glm::mat4 WTVInv = glm::inverse(worldView);
+void Camera::UpdateCullingBox() {
+	for (int i = 0; i < 5; i++) {
+		glm::mat4 WTVInv = glm::inverse(WTVmatrix);
 		glm::vec3 transNormals = glm::normalize(glm::mat3(WTVInv) * nontransNormals[i]);
 		glm::vec4 transPoints = WTVInv * nontransPoints[i];
 
-		normals[3*i] = transNormals.x;
-		normals[3*i+1] = transNormals.y;
-		normals[3*i+2] = transNormals.z;
+		normals[3 * i] = transNormals.x;
+		normals[3 * i + 1] = transNormals.y;
+		normals[3 * i + 2] = transNormals.z;
 
-		points[3*i] = transPoints.x;
-		points[3*i+1] = transPoints.y;
-		points[3*i+2] = transPoints.z;
+		points[3 * i] = transPoints.x;
+		points[3 * i + 1] = transPoints.y;
+		points[3 * i + 2] = transPoints.z;
 	}
 }
 
-void Camera::Update()
-{
+void Camera::Update() {
 	glm::vec3 yvec = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 zvec = glm::vec3(0.0f, 0.0f, -1.0f);
 
 	// Update directions
-	heading = glm::rotate(zvec, phi, yvec);
-	side = glm::cross(heading, yvec);
-	up = glm::rotate(yvec, theta, side);
-	heading = glm::cross(up, side);
+	heading = glm::normalize(glm::vec3(-sin(theta)*sin(phi), cos(theta), sin(theta)*cos(phi)));
+	side = glm::normalize(glm::cross(heading, yvec));
+	up = glm::normalize(glm::cross(side, heading));
 
 	// Update camera matrix
-	lookp = p + heading;
-	worldView = lookAt(p,lookp,yvec);
+	glm::vec3 lookp = p + heading;
+	WTVmatrix = lookAt(p, lookp, yvec);
 }
 
-void Camera::MoveForward(GLfloat deltaT)
-{
-	if (isMoving)
-	{
-		p = p + heading * mspeed * deltaT;
-		Update();
-		UpdateCullingBox();
+void Camera::UpdateCamera() {
+	Update();
+	UpdateCullingBox();
+}
+
+void Camera::MoveForward(GLfloat deltaT) {
+	if (!isPaused) {
+		p += heading * mspeed * deltaT;
 	}
 }
-void Camera::MoveBackward(GLfloat deltaT)
-{
-	if (isMoving)
-	{
-		p = p - heading * mspeed * deltaT;
-		Update();
-		UpdateCullingBox();
+void Camera::MoveRight(GLfloat deltaT) {
+	if (!isPaused) {
+		p += side * mspeed * deltaT;
 	}
 }
-void Camera::MoveLeft(GLfloat deltaT)
-{
-	if (isMoving)
-	{
-		p = p - side * mspeed * deltaT;
-		Update();
-		UpdateCullingBox();
-	}
-}
-void Camera::MoveRight(GLfloat deltaT)
-{
-	if (isMoving)
-	{
-		p = p + side * mspeed * deltaT;
-		Update();
-		UpdateCullingBox();
-	}
-}
-void Camera::MoveUp(GLfloat deltaT)
-{
-	if (isMoving)
-	{
-		p = p + up * mspeed * deltaT;
-		Update();
-		UpdateCullingBox();
-	}
-}
-void Camera::MoveDown(GLfloat deltaT)
-{
-	if (isMoving)
-	{
-		p = p - up * mspeed * deltaT;
-		Update();
-		UpdateCullingBox();
+void Camera::MoveUp(GLfloat deltaT) {
+	if (!isPaused) {
+		p += up * mspeed * deltaT;
 	}
 }
 
-void Camera::RotateCamera(GLint dx, GLint dy)
-{
-	if (isMoving)
-	{
-		phi -= (float)dx * rspeed;
-		if (phi > 2.0f * M_PI)
-			phi -= 2.0f * M_PI;
-		else if (phi < 0.0f)
-			phi += 2.0f * M_PI;
+void Camera::RotateCamera(GLint dx, GLint dy) {
+	if (!isPaused) {
+		float eps = 0.001f;
 
-		theta -= (float)dy * rspeed;
-		if (theta > M_PI / 2.1f)
-			theta = M_PI / 2.1f;
-		else if (theta < -M_PI / 2.1f)
-			theta = -M_PI / 2.1f;
+		phi += rspeed * dx;
+		theta += rspeed * dy;
 
-		Update();
-		UpdateCullingBox();
+		phi = fmod(phi, 2.0f * M_PI);
+		theta = theta < M_PI - eps ? (theta > eps ? theta : eps) : M_PI - eps;
 	}
 }

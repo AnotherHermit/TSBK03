@@ -9,9 +9,9 @@
 
 in vec3 posValue;
 
-uniform mat4 worldView;
+uniform mat4 WTVmatrix;
 
 void main()
 {	
-	gl_Position = worldView * vec4(posValue, 1.0f);
+	gl_Position = WTVmatrix * vec4(posValue, 1.0f);
 }

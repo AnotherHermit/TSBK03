@@ -15,7 +15,7 @@ out vec4 outColor;
 
 uniform float currT;
 uniform sampler2D texUnit;
-uniform mat4 worldView;
+uniform mat4 WTVmatrix;
 
 void main()
 {
@@ -46,7 +46,7 @@ void main()
 	
 	// Calculate light
 	vec3 light = vec3(0.0f, 1.0f, 0.0f);
-	float shade = max(dot(normalize(exNormal), mat3(worldView) * light), 0.1);
+	float shade = max(dot(normalize(exNormal), mat3(WTVmatrix) * light), 0.1);
 	
 	// Get texture colors
 	vec4 texColor = texture(texUnit, texValue);

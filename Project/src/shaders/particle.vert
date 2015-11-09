@@ -16,19 +16,19 @@ out vec3 exNormal;
 out vec2 exTexCoord;
 out vec4 exPosition;
 
-uniform mat4 modelWorld;
-uniform mat4 worldView;
-uniform mat4 proj;
+uniform mat4 MTWmatrix;
+uniform mat4 WTVmatrix;
+uniform mat4 VTPmatrix;
 
 void main(void)
 {
-	exNormal = mat3(worldView * modelWorld) * inNormal;
+	exNormal = mat3(WTVmatrix * MTWmatrix) * inNormal;
 
 	exTexCoord = inTexCoord;
 	
-	vec4 temp = worldView * (modelWorld * vec4(inPosition, 1.0f) + vec4(posValue, 0.0f));
+	vec4 temp = WTVmatrix * (MTWmatrix * vec4(inPosition, 1.0f) + vec4(posValue, 0.0f));
 	
 	exPosition = temp;
 	
-	gl_Position = proj * temp;
+	gl_Position = VTPmatrix * temp;
 }

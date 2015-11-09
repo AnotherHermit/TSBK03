@@ -5,83 +5,124 @@
 
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
+#include "gtx/transform.hpp"
 
 #include "LoadTGA.h"
 #include "GL_utilities.h"
 
-Drawable::Drawable()
-{
+
+Sphere::Sphere(GLfloat radius)
+	: Drawable() {
 	program = -1;
-	textureId = -1;
-
-	inputNames[0] = "inPosition";
-	inputNames[1] = "inNormal";
-	inputNames[2] =	"inTexCoord";
-	
-	modelWorld = glm::mat4();
-	modelInit = glm::mat4();
-	
-	baseColor = glm::vec3(0, 0, 1.0f);
+	model = nullptr;
+	MTWmatrix = glm::scale(glm::vec3(radius));
 }
 
-void Drawable::SetProgram(const char** shaderLoc)
-{
-	program = loadShaders(shaderLoc[0], shaderLoc[1]);
-}
+bool Sphere::Init(Camera* setCam, GLuint buffer) {
+	cam = setCam;
+	cullBuffer = buffer;
 
-void Drawable::SetModel(const char* modelLoc, glm::mat4 initTransform)
-{
+	program = loadShaders("src/shaders/particle.vert", "src/shaders/particle.frag");
 	glUseProgram(program);
-	modelInit = initTransform;
-	modelWorld = modelInit;
-	
-	model = LoadModel(modelLoc);
+
+	model = LoadModel("resources/groundsphere.obj");
 	NormalizeModel(model);
-	
-	BuildModelVAO2(model, program, inputNames[0], inputNames[1], inputNames[2]);
-	
-	printError("Set Model");
+	BuildModelVAO2(model, program, "inPosition", "inNormal", "inTexCoord");
+
+	glUniformMatrix4fv(glGetUniformLocation(program, "MTWmatrix"), 1, GL_FALSE, glm::value_ptr(MTWmatrix));
+	glUniformMatrix4fv(glGetUniformLocation(program, "VTPmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetVTP()));
+
+	glBindBuffer(GL_ARRAY_BUFFER, cullBuffer);
+	glBindVertexArray(model->vao);
+
+	GLuint drPosAttr = glGetAttribLocation(program, "posValue");
+	glEnableVertexAttribArray(drPosAttr);
+	glVertexAttribPointer(drPosAttr, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribDivisor(drPosAttr, 1);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	printError("Init Sphere");
+	return true;
 }
 
-void Drawable::SetTexture(const char* textureLoc)
-{
-	baseColor = glm::vec3(1.0f, 0, 1.0f); // To detect any errors
-	
-	glActiveTexture(GL_TEXTURE0);
-	LoadTGATextureSimple(textureLoc, &textureId);
-}
-
-void Drawable::SetColor(glm::vec3 colorVec)
-{
-	baseColor = colorVec;
-}
-
-void Drawable::Update(GLfloat deltaT)
-{
-	return;
-}
-
-void Drawable::Draw() 
-{	
+void Sphere::Update(GLfloat t) {
 	glUseProgram(program);
-	GLint textureLoc = glGetUniformLocation(program, "texUnit");
-	GLint colorLoc = glGetUniformLocation(program, "inColor");
+
+	glUniformMatrix4fv(glGetUniformLocation(program, "WTVmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetWTV()));
+	glUniform1f(glGetUniformLocation(program, "currT"), t);
+
+	printError("Model Update");
+}
+
+void Sphere::Draw(GLuint num) {
+	glUseProgram(program);
+
+	glBindVertexArray(model->vao);
+	if (num > 0) { glDrawElementsInstanced(GL_TRIANGLES, model->numIndices, GL_UNSIGNED_INT, 0L, num); }
+	glBindVertexArray(0);
+
+	printError("Draw Spheres");
+}
+
+Billboard::Billboard(GLfloat startRadius) {
+	program = -1;
+	texID = -1;
+	vao = -1;
+	cullBuffer = -1;
+	radius = startRadius;
+}
+
+bool Billboard::Init(Camera* setCam, GLuint buffer) {
+	cam = setCam;
+	cullBuffer = buffer;
+
+	program = loadShadersG("src/shaders/billboard.vert", "src/shaders/billboard.frag", "src/shaders/billboard.geom");
+	glUseProgram(program);
+
+	glGenVertexArrays(1, &vao);
+	glGenTextures(1, &texID);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+	LoadTGATextureSimple("resources/particle.tga", &texID);
 	
-	if(textureLoc != -1)
-	{
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, textureId);
-		glUniform1i(textureLoc, 0); 
-	}
-	
-	if(colorLoc != -1)
-		glUniform3f(colorLoc, baseColor.x, baseColor.y, baseColor.z);
-	
-	if(model != NULL)
-	{
-		glUniformMatrix4fv(glGetUniformLocation(program, "modelWorld"), 1, GL_FALSE, glm::value_ptr(modelWorld));
-		DrawModel(model, program, inputNames[0], inputNames[1], inputNames[2]);
-	}
-	else
-		std::cerr << "No model assosiated with Drawable!" << std::endl;
+	glUniformMatrix4fv(glGetUniformLocation(program, "VTPmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetVTP()));
+	glUniform1f(glGetUniformLocation(program, "radius"), radius);
+	glUniform1i(glGetUniformLocation(program, "texUnit"), 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, cullBuffer);
+	glBindVertexArray(vao);
+
+	GLuint drPosAttr = glGetAttribLocation(program, "posValue");
+	glEnableVertexAttribArray(drPosAttr);
+	glVertexAttribPointer(drPosAttr, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	printError("Init Billboard");
+	return true;
+}
+
+void Billboard::Update(GLfloat t) {
+	glUseProgram(program);
+
+	glUniform3f(glGetUniformLocation(program, "cameraPos"), cam->GetPos().x, cam->GetPos().y, cam->GetPos().z);
+	glUniformMatrix4fv(glGetUniformLocation(program, "WTVmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetWTV()));
+	glUniform1f(glGetUniformLocation(program, "currT"), t);
+
+	printError("Billboard Update");
+}
+
+void Billboard::Draw(GLuint num) {
+	glUseProgram(program);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texID);
+	glBindVertexArray(vao);
+	if (num > 0) { glDrawArrays(GL_POINTS, 0, num); }
+	glBindVertexArray(0);
+
+	printError("Draw Billboards");
 }

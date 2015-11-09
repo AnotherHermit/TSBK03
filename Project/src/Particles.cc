@@ -8,228 +8,264 @@
 
 #include <iostream>
 
-Particles::Particles(GLuint numParticles, GLfloat initRadius)
-{
+Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 	setParticles = numParticles;
 	particles = setParticles*setParticles*setParticles;
 	drawParticles = 0;
 	radius = initRadius;
 	oldT = 0;
-	type = 0;
+	startMode = 1;
+	currVAO = 0;
+	currTFB = 1;
 	doUpdate = false;
-	
-	// Shaders for update pass
-	shaderFiles[0] = "src/shaders/update.vert"; 
-	// Shaders for culling pass
-	shaderFiles[1] = "src/shaders/culling.vert"; 
-	shaderFiles[2] = "src/shaders/culling.geom"; 
-	// Shaders for drawing
-	shaderFiles[3] = "src/shaders/particle.vert"; 
-	shaderFiles[4] = "src/shaders/particle.frag"; 
-	// Shaders for drawing billboards
-	shaderFiles[5] = "src/shaders/billboard.vert";
-	shaderFiles[6] = "src/shaders/billboard.geom";
-	shaderFiles[7] = "src/shaders/billboard.frag";
-	
+	renderModels = false;
+
+	// Create the query ID
+	glGenQueries(1, &qId);
+	// Generate Buffers
+	glGenBuffers(2, updateBuffer);
+	glGenBuffers(1, &cullingBuffer);
+	// Generate VAO's
+	glGenVertexArrays(2, updateVAO);
+	glGenVertexArrays(2, cullingVAO);
+}
+
+bool Particles::Init(Camera* setCam) {
 	SetParticleData();
-	InitGlStates();
-	
+	InitGLStates();
+
+	cam = setCam;
+
+	model = new Sphere(1.0f);
+	model->Init(setCam, cullingBuffer);
+
+	billboard = new Billboard(1.0f);
+	billboard->Init(setCam, cullingBuffer);
+
 	printError("Particles Constructor");
+	return true;
 }
 
-void Particles::Update(GLfloat t)
-{	
-	GLfloat deltaT = t - oldT;
-
-	glUseProgram(programs[0]);
-	glUniform1f(glGetUniformLocation(programs[0], "deltaT"), deltaT);
-	glUniform1f(glGetUniformLocation(programs[0], "t"), t);
-
-	printError("Particles Update");
-	if(doUpdate)
-		DoUpdate(particles);	
-
-	oldT = t;
-}
-
-void Particles::Cull(const GLfloat* normals, const GLfloat* points)
-{
-	glUseProgram(programs[1]);
-
-	glUniform3fv(glGetUniformLocation(programs[1], "boxNormals"), 5, normals);	
-	glUniform3fv(glGetUniformLocation(programs[1], "boxPoints"), 5, points);
-
-	glUniform1f(glGetUniformLocation(programs[1], "radius"), radius);
-	
-	printError("Particles Cull");
-	
-	drawParticles = DoCulling(particles, cullingBuffer);
-	
-	// Swap TFB buffer to read and write
-	if(doUpdate)
-		SwapBuffers();
-}
-
-void Particles::DrawParticles(const glm::mat4 proj, const glm::mat4 worldView)
-{
-	glUseProgram(programs[2]);
-
-	glUniformMatrix4fv(glGetUniformLocation(programs[2], "proj"), 1, GL_FALSE, glm::value_ptr(proj));
-	glUniformMatrix4fv(glGetUniformLocation(programs[2], "worldView"), 1, GL_FALSE, glm::value_ptr(worldView));
-	
-	glUniformMatrix4fv(glGetUniformLocation(programs[2], "modelWorld"), 1, GL_FALSE, glm::value_ptr(modelWorld));
-	glUniform1f(glGetUniformLocation(programs[2], "currT"), oldT);
-	
-	// Set the attribute for the draw pass
-	glBindVertexArray(model->vao);
-	if (drawParticles > 0)
-		glDrawElementsInstanced(GL_TRIANGLES, model->numIndices, GL_UNSIGNED_INT, 0L, drawParticles);
-
-	glBindVertexArray(0);	
-	
-	printError("Particles Draw");
-}
-
-void Particles::DrawBillboards(const glm::mat4 proj, const glm::mat4 worldView, const glm::vec3 camerapos)
-{
-	glUseProgram(programs[3]);
-
-	glUniform3f(glGetUniformLocation(programs[3], "cameraPos"), camerapos.x, camerapos.y, camerapos.z);
-	glUniformMatrix4fv(glGetUniformLocation(programs[3], "proj"), 1, GL_FALSE, glm::value_ptr(proj));
-	glUniformMatrix4fv(glGetUniformLocation(programs[3], "worldView"), 1, GL_FALSE, glm::value_ptr(worldView));
-
-	glUniform1f(glGetUniformLocation(programs[3], "radius"), radius);
-	glUniform1f(glGetUniformLocation(programs[3], "currT"), oldT);
-	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textureId);
-	glUniform1i(glGetUniformLocation(program, "texUnit"), 0); 
-	
-	glBindVertexArray(billboardVAO);
-	
-	if (drawParticles > 0)
-	{
-		glDrawArrays(GL_POINTS, 0, drawParticles);
-	}
-		
-	glBindVertexArray(0);	
-
-	printError("Particles Draw Billboards");
-}
-
-void Particles::SetParticles(GLuint newParticles)
-{
-	SetParticles(newParticles, type);
-}
-
-void Particles::SetParticles(GLuint newParticles, GLuint newType)
-{
-	setParticles = newParticles;
-	particles = setParticles*setParticles*setParticles;
-	type = newType;
-	
-	// Free GPU Memory from update buffers and remove the buffers
-	glDeleteBuffers(1, &cullingBuffer);
-	
-	SetParticleData();
-	ResetTFB(programs, particleData.data(), particles);
-	SetCullingState();
-}
-
-void Particles::SetParticleData()
-{
+void Particles::SetParticleData() {
 	float offset;
 	float offsetY;
-	
-	if (type == 1)
-	{
+
+	if (startMode == 1) {
+		// Place particles centered over origin
 		offset = -((float)setParticles - 1) / 2;
 		offsetY = offset;
-	}
-	else if(type == 2) 
-	{
+	} else if (startMode == 2) {
+		// Place particles centered over origin but displaced along y.
 		offset = -((float)setParticles - 1) / 2;
 		offsetY = 100.0f;
-	}
-	else
-	{
+	} else {
+		// Place all particles in first octant
 		offset = 0;
 		offsetY = offset;
 	}
 
-	particleData.clear();
+	particleData.resize(particles * 9);
 
+	unsigned int ind = 0;
 	// Create the instance data
-	for(unsigned int i = 0; i < setParticles; ++i)
-	{
-		for(unsigned int j = 0; j < setParticles; ++j)
-		{
-			for(unsigned int k = 0; k < setParticles; ++k)
-			{
+	for (unsigned int i = 0; i < setParticles; ++i) {
+		for (unsigned int j = 0; j < setParticles; ++j) {
+			for (unsigned int k = 0; k < setParticles; ++k) {
 				// Generate positions
-				particleData.push_back(((float)i + offset)*2.0f*radius); // X
-				particleData.push_back(((float)j + offsetY)*2.0f*radius); // Y
-				particleData.push_back(((float)k + offset)*2.0f*radius); // Z
-				
+				particleData[ind++] = (((float)i + offset)  * 2.0f * radius); // X
+				particleData[ind++] = (((float)j + offsetY) * 2.0f * radius); // Y
+				particleData[ind++] = (((float)k + offset)  * 2.0f * radius); // Z
+
 				// Generate velocities
-				particleData.push_back(0.0f); // X
-				particleData.push_back(0.0f); // Y
-				particleData.push_back(0.0f); // Z
-				
+				particleData[ind++] = (0.0f); // X
+				particleData[ind++] = (0.0f); // Y
+				particleData[ind++] = (0.0f); // Z
+
 				// Set acceleration
-				particleData.push_back(0.0f); // X
-				particleData.push_back(0.0f); // Y
-				particleData.push_back(0.0f); // Z
+				particleData[ind++] = (0.0f); // X
+				particleData[ind++] = (0.0f); // Y
+				particleData[ind++] = (0.0f); // Z
 			}
 		}
 	}
 }
 
-void Particles::InitGlStates()
-{
-	InitTFB(programs, shaderFiles, particleData.data(), particles);
+void Particles::InitGLStates() {
+	// Create program for the update and culling TFB
+	updateShader = loadShaders("src/shaders/update.vert", NULL);
+	cullShader = loadShadersG("src/shaders/culling.vert", NULL, "src/shaders/culling.geom");
 
-	programs[2] = loadShaders(shaderFiles[3], shaderFiles[4]);
-	program = programs[2];	
-	
-	programs[3] = loadShadersG(shaderFiles[5], shaderFiles[7], shaderFiles[6]);
-	
-	glm::mat4 initModel = glm::scale(glm::vec3(radius));
-	SetModel("resources/groundsphere.obj", initModel);
-	
-	SetTexture("resources/particle.tga");
-	
-	SetCullingState();
-	
-	printError("Particles Init GL States");
-}
+	// Names for transform feedback return values
+	const GLchar* updateVaryings[] = {"updatePosValue", "updateVelValue", "updateAccValue"};
+	const GLchar* cullingVaryings[] = {"culledPosValue"};
 
-void Particles::SetCullingState()
-{
-	// Generate Buffers
-	glGenBuffers(1, &cullingBuffer);
+	// Create the transform feedback output variable
+	glTransformFeedbackVaryings(updateShader, 3, updateVaryings, GL_INTERLEAVED_ATTRIBS);
+	glTransformFeedbackVaryings(cullShader, 1, cullingVaryings, GL_INTERLEAVED_ATTRIBS);
 
-	// Bind initial data to buffers
+	// Link program, we do this after creating buffers since the linking depends on
+	// knowledge about the output
+	glLinkProgram(updateShader);
+	printProgramInfoLog(updateShader, "Transform Feedback", NULL, NULL, NULL, NULL);
+	printError("Link update shader");
+
+	glLinkProgram(cullShader);
+	printProgramInfoLog(cullShader, "Transform Feedback", NULL, NULL, NULL, NULL);
+	printError("Link cull shader");
+
+	// Create a culling buffer
 	glBindBuffer(GL_ARRAY_BUFFER, cullingBuffer);
 	glBufferData(GL_ARRAY_BUFFER, particles * 3 * sizeof(GLfloat), NULL, GL_STATIC_COPY);
-	
-	// Set state for drawing
-	glBindVertexArray(model->vao);
-	
-	GLuint drPosAttr = glGetAttribLocation(programs[2], "posValue");
-	glEnableVertexAttribArray(drPosAttr);
-	glVertexAttribPointer(drPosAttr, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribDivisor(drPosAttr, 1);
-	
-	glBindVertexArray(0);
-	
-	glGenVertexArrays(1, &billboardVAO);
-	glBindVertexArray(billboardVAO);
-	
-	drPosAttr = glGetAttribLocation(programs[3], "posValue");
-	glEnableVertexAttribArray(drPosAttr);
-	glVertexAttribPointer(drPosAttr, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	
-	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// Print errors
+	printError("Create Culling Buffer");
+
+	// Set VAOs
+	// Get attributes
+	GLint inPosAttr = glGetAttribLocation(updateShader, "posValue");
+	GLint inVelAttr = glGetAttribLocation(updateShader, "velValue");
+	GLint inAccAttr = glGetAttribLocation(updateShader, "accValue");
+	GLint upPosAttr = glGetAttribLocation(cullShader, "posValue");
+
+	for (int i = 0; i < 2; i++) {
+		glBindBuffer(GL_ARRAY_BUFFER, updateBuffer[i]);
+		glBufferData(GL_ARRAY_BUFFER, particles * 9 * sizeof(GLfloat), particleData.data(), GL_STATIC_COPY);
+
+		// Set update VAO states
+		glBindVertexArray(updateVAO[i]);
+
+		glEnableVertexAttribArray(inPosAttr);
+		glVertexAttribPointer(inPosAttr, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 9, 0);
+		glEnableVertexAttribArray(inVelAttr);
+		glVertexAttribPointer(inVelAttr, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 9, (void*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(inAccAttr);
+		glVertexAttribPointer(inAccAttr, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 9, (void*)(6 * sizeof(GLfloat)));
+
+		glBindVertexArray(0);
+
+		// Set culling VAO state
+		glBindVertexArray(cullingVAO[i]);
+
+		glEnableVertexAttribArray(upPosAttr);
+		glVertexAttribPointer(upPosAttr, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 9, 0);
+
+		glBindVertexArray(0);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+	printError("Create Transform Feedback VAOs");
+}
+
+void Particles::SetParticles(GLuint newParticles) {
+	SetParticles(newParticles, startMode);
+}
+
+void Particles::SetParticles(GLuint newParticles, GLuint newType) {
+	setParticles = newParticles;
+	particles = setParticles*setParticles*setParticles;
+	startMode = newType;
+
+	SetParticleData();
+	InitGLStates();
+}
+
+void Particles::Update(GLfloat t) {
+	GLfloat deltaT = t - oldT;
+
+	model->Update(t);
+	billboard->Update(t);
+
+	glUseProgram(updateShader);
+	glUniform1f(glGetUniformLocation(updateShader, "deltaT"), deltaT);
+	glUniform1f(glGetUniformLocation(updateShader, "t"), t);
+
+	printError("Particles Update");
+	if (doUpdate && particles > 0) {
+		// Disable rasterizer since we dont want to draw
+		glEnable(GL_RASTERIZER_DISCARD);
+
+		// Set the attributes for the first pass
+		glBindVertexArray(updateVAO[currVAO]);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, updateBuffer[currTFB]);
+
+			// Enter transform feedback mode
+			glBeginTransformFeedback(GL_POINTS);
+
+				// Perform the transform feedback
+				glDrawArrays(GL_POINTS, 0, particles);
+
+			// End transform feedback mode
+			glEndTransformFeedback();
+
+		// Enable the rasterizer again
+		glDisable(GL_RASTERIZER_DISCARD);
+
+		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
+		glBindVertexArray(0);
+
+		printError("Do Update");
+	}
+
+	oldT = t;
+}
+
+void Particles::Cull() {
+	glUseProgram(cullShader);
+
+	glUniform3fv(glGetUniformLocation(cullShader, "boxNormals"), 5, cam->GetCullingNormals());
+	glUniform3fv(glGetUniformLocation(cullShader, "boxPoints"), 5, cam->GetCullingPoints());
+	glUniform1f(glGetUniformLocation(cullShader, "radius"), radius);
+
+	printError("Particles Before Cull");
+	
+	if (particles > 0) {
+		// Disable rasterizer since we dont want to draw
+		glEnable(GL_RASTERIZER_DISCARD);
+
+		// Set the attributes for the second pass
+		glBindVertexArray(cullingVAO[currTFB]);
+		glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, cullingBuffer);
+
+		// Enter transform feedback mode
+		glBeginTransformFeedback(GL_POINTS);
+
+			// Start recording query
+			glBeginQuery(GL_PRIMITIVES_GENERATED, qId);
+
+				// Perform the transform feedback
+				glDrawArrays(GL_POINTS, 0, particles);
+
+			// End Query
+			glEndQuery(GL_PRIMITIVES_GENERATED);
+
+		// End transform feedback mode
+		glEndTransformFeedback();
+
+		// Enable the rasterizer again
+		glDisable(GL_RASTERIZER_DISCARD);
+
+		// Get number of culled objects
+		glGetQueryObjectuiv(qId, GL_QUERY_RESULT, &drawParticles);
+
+		glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, 0);
+		glBindVertexArray(0);
+
+		printError("Do Culling");
+	}
+
+	// Swap TFB buffer to read and write
+	if (doUpdate) {
+		currVAO = currTFB;
+		currTFB = 1 - currVAO;
+	}
+}
+
+void Particles::Draw() {
+	if (renderModels) {
+		model->Draw(drawParticles);
+	} else {
+		billboard->Draw(drawParticles);
+	}
 }

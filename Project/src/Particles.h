@@ -1,73 +1,62 @@
 ﻿#ifndef PARTICLES
 #define PARTICLES
 
+#include "Camera.h"
 #include "Drawable.h"
 
 #include "glm.hpp"
 
 #include <vector>
 
-class Particles : public Drawable
-{
+class Particles {
 private:
-	void SetParticleData();
-	void InitGlStates();
-	void SetCullingState();
+	// Transform feedback
+	GLuint updateVAO[2], cullingVAO[2];
+	GLuint updateBuffer[2], cullingBuffer;
+	GLuint updateShader, cullShader;
+	GLuint qId;
+	GLint currVAO, currTFB;
 	
-	//
-	const char* shaderFiles[8];
-	GLuint cullingBuffer;
-	GLuint billboardVAO;
-	GLuint programs[4];
-	
-	// Model data
+	// Particle info
 	GLfloat radius;
-	
-	// 
+	GLuint startMode;
 	GLuint particles, drawParticles, setParticles;
-	GLuint type; 
 	std::vector<GLfloat> particleData;
 
-	//
+	// Drawing stuff
+	Camera* cam;
+	Drawable *model, *billboard;
+
+	// Others
 	GLfloat oldT, currT;
 	bool doUpdate;
-	
+	bool renderModels;
+
+	// Methods
+	void SetParticleData();
+	void InitGLStates();
+
 public:
 	Particles(GLuint numParticles, GLfloat initRadius);
-	
-	virtual void Update(GLfloat t);
-	void Cull(const GLfloat* normals, const GLfloat* points);
-	void DrawParticles(const glm::mat4 proj, const glm::mat4 worldView);
-	void DrawBillboards(const glm::mat4 proj, const glm::mat4 worldView, const glm::vec3 camerapos);
-	
-	void ToggleUpdate()
-	{doUpdate = !doUpdate;}
-	
-	GLuint *GetParticlesPtr()
-	{return &particles;}
-	
-	GLuint *GetDrawParticlesPtr()
-	{return &drawParticles;}
 
-	const GLint GetParticles()
-	{return particles;}
-	
-	const GLint GetDrawParticles()
-	{return drawParticles;}
-	
-	const GLint GetSetParticles()
-	{return setParticles;}
-	
-	const GLuint GetUpdateProgram()
-	{return programs[0];}
-	
-	const GLuint GetCullingProgram()
-	{return programs[1];}
-	
-	const GLuint GetDrawProgram()
-	{return programs[2];}
+	bool Init(Camera* setCam);
+	void Update(GLfloat t);
+	void Cull();
+	void Draw();
 
-	void SetParticles(GLuint newParticles);	
+	void ToggleDrawModels() { renderModels = !renderModels; }
+	void ToggleUpdate() { doUpdate = !doUpdate; }
+
+	GLuint *GetParticlesPtr() { return &particles; }
+	GLuint *GetDrawParticlesPtr() { return &drawParticles; }
+
+	const GLint GetParticles() { return particles; }
+	const GLint GetDrawParticles() { return drawParticles; }
+	const GLint GetSetParticles() { return setParticles; }
+	const GLuint GetUpdateProgram() { return updateShader; }
+	const GLuint GetCullingProgram() { return cullShader; }
+
+	void SetParticles(GLuint newParticles);
 	void SetParticles(GLuint newParticles, GLuint newType);
 };
 

@@ -8,13 +8,12 @@
 
 #include <vector>
 
-class Camera
-{
+class Camera {
 private:
-	glm::vec3 p,lookp;
+	glm::vec3 p;
 	glm::vec3 heading, side, up;
 	GLfloat mspeed, rspeed, phi, theta;
-	bool isMoving;
+	bool isPaused;
 
 	std::vector<glm::vec4> nontransPoints;
 	std::vector<glm::vec3> nontransNormals;
@@ -22,8 +21,7 @@ private:
 	GLfloat normals[15];
 	GLfloat points[15];
 
-	glm::mat4 worldView;
-	glm::mat4 proj;
+	glm::mat4 WTVmatrix, VTPmatrix;
 
 	void UpdateCullingBox();
 	void Update();
@@ -34,45 +32,27 @@ public:
 	void ResetCamera(glm::vec3 pos);
 
 	void MoveForward(GLfloat deltaT);
-	void MoveBackward(GLfloat deltaT);
-	void MoveLeft(GLfloat deltaT);
 	void MoveRight(GLfloat deltaT);
 	void MoveUp(GLfloat deltaT);
-	void MoveDown(GLfloat deltaT);
 	void RotateCamera(GLint dx, GLint dy);
 
-	void SetMovement(bool shouldMove)
-	{isMoving = shouldMove;}
+	void UpdateCamera();
 
-	const GLfloat* GetCullingNormals()
-	{return normals;}
+	void TogglePause() { isPaused = !isPaused; }
 
-	const GLfloat* GetCullingPoints()
-	{return points;}
+	const GLfloat* GetCullingNormals() { return normals; }
+	const GLfloat* GetCullingPoints() { return points; }
 
-	const glm::mat4 GetProj()
-	{return proj;}
+	const glm::mat4 GetVTP() { return VTPmatrix; }
+	const glm::mat4 GetWTV() { return WTVmatrix; }
+	const glm::vec3 GetPos() { return p; }
+	const glm::vec3 GetHeading() { return heading; }
+	const glm::vec3 GetSide() { return side; }
+	const glm::vec3 GetUp() { return up; }
 
-	const glm::mat4 GetWorldView()
-	{return worldView;}
+	GLfloat* SpeedPtr() { return &mspeed; }
+	GLfloat* HeadingPtr() { return glm::value_ptr(heading); }
 
-	const glm::vec3 GetPos()
-	{return p;}
-
-	const glm::vec3 GetHeading()
-	{return heading;}
-
-	const glm::vec3 GetSide()
-	{return side;}
-
-	const glm::vec3 GetUp()
-	{return up;}
-
-	GLfloat *SpeedPtr()
-	{return &mspeed;}
-
-	GLfloat *HeadingPtr()
-	{return glm::value_ptr(heading);}
 };
 
 #endif

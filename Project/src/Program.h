@@ -3,20 +3,20 @@
 #define PROGRAM_H
 
 #ifdef __APPLE__
-	#include <OpenGL/gl3.h>
-	#include <SDL2/SDL.h>
+#include <OpenGL/gl3.h>
+#include <SDL2/SDL.h>
 #else
-	#ifdef  __linux__
-		#define GL_GLEXT_PROTOTYPES
-		#include <GL/gl.h>
-		#include <GL/glu.h>
-		#include <GL/glx.h>
-		#include <GL/glext.h>
-		#include <SDL2/SDL.h>
-	#else
-		#include "glew.h"
-		#include "Windows/sdl2/SDL.h"
-	#endif
+#ifdef  __linux__
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glx.h>
+#include <GL/glext.h>
+#include <SDL2/SDL.h>
+#else
+#include "glew.h"
+#include "Windows/sdl2/SDL.h"
+#endif
 #endif
 
 #include "Camera.h"
@@ -24,8 +24,7 @@
 #include "AntTweakBar.h"
 
 
-class Program
-{
+class Program {
 private:
 	SDL_Window *screen;
 	SDL_GLContext glcontext;
@@ -39,12 +38,10 @@ private:
 	GLfloat FPS;
 
 	Particles *particleSystem;
-	bool renderModels;
 
 	Camera *cam;
 
 	TwBar *antBar;
-	bool mouseHidden;
 
 public:
 	Program();
@@ -54,15 +51,15 @@ public:
 	void timeUpdate();
 
 	bool Init();
-	
+
 	void OnEvent(SDL_Event *Event);
 	void OnKeypress(SDL_Event *Event);
 	void OnMouseMove(SDL_Event *Event);
 	void CheckKeyDowns();
-	
+
 	void Update();
 	void Render();
-	
+
 	void Clean();
 };
 
