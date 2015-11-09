@@ -4,7 +4,6 @@
 #include "gtx/transform.hpp"
 
 #include "GL_utilities.h"
-#include "TransformFeedback.h"
 
 #include <iostream>
 
@@ -44,6 +43,19 @@ bool Particles::Init(Camera* setCam) {
 
 	printError("Particles Constructor");
 	return true;
+}
+
+void Particles::SetParticles(GLuint newParticles) {
+	SetParticles(newParticles, startMode);
+}
+
+void Particles::SetParticles(GLuint newParticles, GLuint newType) {
+	setParticles = newParticles;
+	particles = setParticles*setParticles*setParticles;
+	startMode = newType;
+
+	SetParticleData();
+	InitGLStates();
 }
 
 void Particles::SetParticleData() {
@@ -156,19 +168,6 @@ void Particles::InitGLStates() {
 	}
 
 	printError("Create Transform Feedback VAOs");
-}
-
-void Particles::SetParticles(GLuint newParticles) {
-	SetParticles(newParticles, startMode);
-}
-
-void Particles::SetParticles(GLuint newParticles, GLuint newType) {
-	setParticles = newParticles;
-	particles = setParticles*setParticles*setParticles;
-	startMode = newType;
-
-	SetParticleData();
-	InitGLStates();
 }
 
 void Particles::Update(GLfloat t) {

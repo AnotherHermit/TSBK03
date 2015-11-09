@@ -22,8 +22,8 @@ void main()
 	// Create the initial positions
 	vec3 toEmit = gl_in[0].gl_Position.xyz;
 	vec3 toView = vec3(0,0,1);
-	vec3 left = vec3(-1, 0,0); //normalize(cross(toView, vec3(0,1,0)));
-	vec3 top = vec3(0,1,0); //normalize(cross(left,toView));
+	vec3 left = vec3(-1, 0,0);
+	vec3 top = vec3(0,1,0);
 	vec4 tempPos;
 	
 	// Create the bottom left corner

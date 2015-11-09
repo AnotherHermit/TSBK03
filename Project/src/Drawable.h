@@ -10,8 +10,6 @@
 // ===== Drawable base class ===== \\
 
 class Drawable {
-protected:
-	Camera* cam;
 public:
 	Drawable() {}
 	
@@ -24,12 +22,11 @@ public:
 
 class Sphere : public Drawable {
 private:
-	// gl Locations
 	GLuint program, cullBuffer;
-	// Model parameters
 	Model* model;
-	// Transformation matrices
 	glm::mat4 MTWmatrix;
+
+	Camera* cam;
 
 public:
 	Sphere(GLfloat radius);
@@ -43,9 +40,10 @@ public:
 
 class Billboard : public Drawable {
 private:
-	// gl Locations
 	GLuint program, texID, vao, cullBuffer;
 	GLfloat radius;
+
+	Camera* cam;
 
 public:
 	Billboard(GLfloat startRadius);

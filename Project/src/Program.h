@@ -33,14 +33,10 @@ private:
 
 	bool isRunning;
 
-	GLfloat currentTime;
-	GLfloat deltaTime;
-	GLfloat FPS;
+	GLfloat currentTime, deltaTime, FPS;
 
 	Particles *particleSystem;
-
 	Camera *cam;
-
 	TwBar *antBar;
 
 public:
