@@ -17,32 +17,29 @@ uniform float currT;
 uniform sampler2D texUnit;
 uniform mat4 WTVmatrix;
 
+// Start From Stackoverflow
+vec3 hsv2rgb(vec3 c)
+{
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+// End From Stackoverflow
+
 void main()
 {
-	// Swap between colors depending on time
-	float timeFactor = 20000;
-	float currentCounter = mod(currT, timeFactor * 3);
-	
-	vec3 newColor;
-	if(currentCounter < timeFactor)
-	{
-		newColor = normalize(vec3(timeFactor - currentCounter, currentCounter, 0));
-	}
-	else if(currentCounter < timeFactor * 2)
-	{
-		newColor = normalize(vec3(0, timeFactor * 2 - currentCounter, currentCounter - timeFactor));
-	}
-	else
-	{
-		newColor = normalize(vec3(currentCounter - timeFactor * 2, 0, timeFactor * 3 - currentCounter));
-	}
+	float colorChangeSpeed = 0.00005f;
+	float hue = fract(currT * colorChangeSpeed);
+	vec3 hsvColor = vec3(hue, 1.0f, 1.0f);
+	vec3 rgbColor = hsv2rgb(hsvColor);
+
 		
 	// Calculate fog
 	float dist = length(outPosition);
 	float minFogDist = 70.0f;
 	float maxFogDist = 150.0f;
 	float fogFactor = clamp((dist - minFogDist)/(maxFogDist - minFogDist), 0.0f, 1.0f);
-	vec3 foggedColor = (1 - fogFactor) * newColor;
+	vec3 foggedColor = (1 - fogFactor) * rgbColor;
 	
 	// Calculate light
 	vec3 light = vec3(0.0f, 1.0f, 0.0f);

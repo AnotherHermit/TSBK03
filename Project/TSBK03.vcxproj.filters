@@ -28,6 +28,15 @@
     <Filter Include="Source Files\Shaders">
       <UniqueIdentifier>{d88f6b57-37dd-4a8d-92f1-b62e66b5b161}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Shaders\Drawing">
+      <UniqueIdentifier>{d50d27cf-b6e7-4ac7-9703-8739aeab810a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shaders\Compute">
+      <UniqueIdentifier>{36f5af3b-ef21-4d2f-9591-fc2322618567}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shaders\Transform Feedback">
+      <UniqueIdentifier>{2b1113ad-8a5f-48cd-a441-146639a37b6a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -97,35 +106,35 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\billboard.frag">
-      <Filter>Source Files\Shaders</Filter>
-    </None>
-    <None Include="src\shaders\billboard.geom">
-      <Filter>Source Files\Shaders</Filter>
-    </None>
-    <None Include="src\shaders\billboard.vert">
-      <Filter>Source Files\Shaders</Filter>
-    </None>
     <None Include="src\shaders\culling.geom">
-      <Filter>Source Files\Shaders</Filter>
+      <Filter>Source Files\Shaders\Transform Feedback</Filter>
     </None>
     <None Include="src\shaders\culling.vert">
-      <Filter>Source Files\Shaders</Filter>
-    </None>
-    <None Include="src\shaders\particle.frag">
-      <Filter>Source Files\Shaders</Filter>
-    </None>
-    <None Include="src\shaders\particle.vert">
-      <Filter>Source Files\Shaders</Filter>
+      <Filter>Source Files\Shaders\Transform Feedback</Filter>
     </None>
     <None Include="src\shaders\update.vert">
-      <Filter>Source Files\Shaders</Filter>
+      <Filter>Source Files\Shaders\Transform Feedback</Filter>
     </None>
-    <None Include="src\shaders\update.comp">
-      <Filter>Source Files\Shaders</Filter>
+    <None Include="src\shaders\billboard.frag">
+      <Filter>Source Files\Shaders\Drawing</Filter>
+    </None>
+    <None Include="src\shaders\billboard.geom">
+      <Filter>Source Files\Shaders\Drawing</Filter>
+    </None>
+    <None Include="src\shaders\billboard.vert">
+      <Filter>Source Files\Shaders\Drawing</Filter>
+    </None>
+    <None Include="src\shaders\particle.frag">
+      <Filter>Source Files\Shaders\Drawing</Filter>
+    </None>
+    <None Include="src\shaders\particle.vert">
+      <Filter>Source Files\Shaders\Drawing</Filter>
     </None>
     <None Include="src\shaders\cull.comp">
-      <Filter>Source Files\Shaders</Filter>
+      <Filter>Source Files\Shaders\Compute</Filter>
+    </None>
+    <None Include="src\shaders\update.comp">
+      <Filter>Source Files\Shaders\Compute</Filter>
     </None>
   </ItemGroup>
 </Project>

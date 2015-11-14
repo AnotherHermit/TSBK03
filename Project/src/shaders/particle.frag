@@ -16,29 +16,26 @@ out vec4 outColor;
 uniform float currT;
 uniform mat4 WTVmatrix;
 
-void main(void)
+// Start From Stackoverflow
+vec3 hsv2rgb(vec3 c)
 {
-	// Swap between colors depending on time
-	float timeFactor = 20000;
-	float currentCounter = mod(currT, timeFactor * 3);
-	vec3 newColor;
-	if(currentCounter < timeFactor)
-	{
-		newColor = normalize(vec3(timeFactor - currentCounter, currentCounter, 0));
-	}
-	else if(currentCounter < timeFactor * 2)
-	{
-		newColor = normalize(vec3(0, timeFactor * 2 - currentCounter, currentCounter - timeFactor));
-	}
-	else
-	{
-		newColor = normalize(vec3(currentCounter - timeFactor * 2, 0, timeFactor * 3 - currentCounter));
-	}
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+// End From Stackoverflow
+
+void main()
+{
+	float colorChangeSpeed = 0.00005f;
+	float hue = fract(currT * colorChangeSpeed);
+	vec3 hsvColor = vec3(hue, 1.0f, 1.0f);
+	vec3 rgbColor = hsv2rgb(hsvColor);
 	
 	// Calculate diffuse light
 	vec3 light = mat3(WTVmatrix) * vec3(0, 1, 0);
 	float shade = max(dot(normalize(exNormal), light), 0.10);
-	vec3 shadedColor = newColor * shade;
+	vec3 shadedColor = rgbColor * shade;
 	
 	// Calculate fog
 	float dist = length(exPosition);
