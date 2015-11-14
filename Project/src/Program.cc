@@ -68,11 +68,11 @@ bool Program::Init() {
 	cam->SetFrustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 150.0f);
 
 	// Set up particle system
-	particleSystem = new Particles(4, 1.0f);
+	particleSystem = new Particles(16, 1.0f);
 	particleSystem->Init(cam);
 
 	printError("After my stuff init: ");
-
+	
 	// Set up the AntBar
 	TwInit(TW_OPENGL_CORE, NULL);
 	TwWindowSize(winWidth, winWidth);
@@ -124,10 +124,10 @@ void Program::OnKeypress(SDL_Event *Event) {
 		particleSystem->ToggleUpdate();
 		break;
 	case SDLK_1:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() - 10);
+		particleSystem->SetParticles(particleSystem->GetSetParticles() / 2);
 		break;
 	case SDLK_2:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() + 10);
+		particleSystem->SetParticles(particleSystem->GetSetParticles() * 2);
 		break;
 	case SDLK_3:
 		particleSystem->SetParticles(particleSystem->GetSetParticles(), 0);
@@ -189,11 +189,11 @@ void Program::Update() {
 	cam->UpdateCamera();
 
 	// Update the particles
-	particleSystem->Update(currentTime);
+	//particleSystem->Update(currentTime);
 	particleSystem->DoCompute(currentTime);
 
 	// Cull the non visible particles
-	particleSystem->Cull();
+	//particleSystem->Cull();
 }
 
 void Program::Render() {

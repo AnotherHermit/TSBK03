@@ -27,19 +27,27 @@ Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 	// Generate VAO's
 	glGenVertexArrays(2, updateVAO);
 	glGenVertexArrays(2, cullingVAO);
+
+
+	//create buffers
+	glGenBuffers(2, computeBuffers);
+	glGenBuffers(1, &computeAtomicCounter);
 }
 
 bool Particles::Init(Camera* setCam) {
 	SetParticleData();
-	InitGLStates();
+	//InitGLStates();
+
+	CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
+	CompileComputeShader(&computeCull, "src/shaders/cull.comp");
 	InitCompute();
 	cam = setCam;
 
 	model = new Sphere(1.0f);
-	model->Init(setCam, cullingBuffer);
+	model->Init(setCam, computeBuffers[1]);
 
 	billboard = new Billboard(1.0f);
-	billboard->Init(setCam, cullingBuffer);
+	billboard->Init(setCam, computeBuffers[1]);
 
 	printError("Particles Constructor");
 	return true;
@@ -55,7 +63,7 @@ void Particles::SetParticles(GLuint newParticles, GLuint newType) {
 	startMode = newType;
 
 	SetParticleData();
-	InitGLStates();
+	InitCompute();
 }
 
 void Particles::SetParticleData() {
@@ -102,8 +110,7 @@ void Particles::SetParticleData() {
 	}
 }
 
-
-void CompileComputeShader(GLuint* program, const char* path) {
+void Particles::CompileComputeShader(GLuint* program, const char* path) {
 	*program = glCreateProgram();
 	GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
 
@@ -127,27 +134,24 @@ void CompileComputeShader(GLuint* program, const char* path) {
 
 void Particles::InitCompute() {
 
-	CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
-	CompileComputeShader(&computeCull, "src/shaders/cull.comp");
-
 	int setCounter = 0;
 
-	//create buffers
-	glGenBuffers(2, computeBuffers);
-	glGenBuffers(1, &computeAtomicCounter);
-
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[0]);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 9 * particles, particleData.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 9 * particles, particleData.data(), GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[1]);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 3 * particles, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 3 * particles, NULL, GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, computeAtomicCounter);
-	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &setCounter, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &setCounter, GL_STREAM_READ);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
+	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 2, computeBuffers);
+	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, computeAtomicCounter);
+
+	particleData.clear();
 
 	printError("init Compute Error");
 }
@@ -155,45 +159,29 @@ void Particles::InitCompute() {
 void Particles::DoCompute(GLfloat t) {
 	GLfloat deltaT = t - oldT;
 
-	model->Update(t);
-	billboard->Update(t);
-
-	glUseProgram(computeUpdate);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeBuffers[0]);
-	glUniform1f(glGetUniformLocation(computeUpdate, "deltaT"), deltaT);
-	glDispatchCompute(particles / 16, 1, 1);
-
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[0]);
-	GLfloat* ptr1 = (GLfloat*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, NULL, 9 * 3 * sizeof(GLfloat), GL_MAP_READ_BIT);
-	printf("Updated points:\n");
-	for (int i = 0; i < 9 * 3; i++) {
-		printf("%f \n", ptr1[i]);
+	if (renderModels) {
+		model->Update(t);
+	} else {
+		billboard->Update(t);
 	}
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	
+	if (doUpdate) {
+		glUseProgram(computeUpdate);
+		glUniform1f(glGetUniformLocation(computeUpdate, "deltaT"), deltaT);
+		glDispatchCompute(particles / 64, 1, 1);
+	}
 
 	glUseProgram(computeCull);
-	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 2, computeBuffers);
-	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, computeAtomicCounter);
-	glUniform3fv(glGetUniformLocation(cullShader, "boxNormals"), 5, cam->GetCullingNormals());
-	glUniform3fv(glGetUniformLocation(cullShader, "boxPoints"), 5, cam->GetCullingPoints());
-	glUniform1f(glGetUniformLocation(cullShader, "radius"), radius);
-	glDispatchCompute(particles / 16, 1, 1);
-
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[1]);
-	ptr1 = (GLfloat*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, NULL, 3 * 3 * sizeof(GLfloat), GL_MAP_READ_BIT);
-	printf("Non culled points:\n");
-	for (int i = 0; i < 9 * 3; i++) {
-		printf("%f \n", ptr1[i]);
-	}
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
+	glUniform3fv(glGetUniformLocation(computeCull, "boxNormals"), 5, cam->GetCullingNormals());
+	glUniform3fv(glGetUniformLocation(computeCull, "boxPoints"), 5, cam->GetCullingPoints());
+	glUniform1f(glGetUniformLocation(computeCull, "radius"), radius);
+	glDispatchCompute(particles / 64, 1, 1);
 
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, computeAtomicCounter);
-	GLuint* ptr2 = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, NULL, sizeof(GLuint), GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	GLuint* ptr2 = (GLuint*)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_READ_WRITE | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
 	computeDrawParticles = *ptr2;
 	*ptr2 = 0; 
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-	printf("Number of non-culled points: %u\n", computeDrawParticles);
+	glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
 }
 
 void Particles::InitGLStates() {
@@ -357,8 +345,8 @@ void Particles::Cull() {
 
 void Particles::Draw() {
 	if (renderModels) {
-		model->Draw(drawParticles);
+		model->Draw(computeDrawParticles);
 	} else {
-		billboard->Draw(drawParticles);
+		billboard->Draw(computeDrawParticles);
 	}
 }

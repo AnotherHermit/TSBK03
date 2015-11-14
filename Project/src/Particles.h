@@ -36,28 +36,27 @@ private:
 	void SetParticleData();
 	void InitGLStates();
 
-	
-
-public:
 	// Compute shader stuff
 	GLuint computeUpdate, computeCull, computeBuffers[2], computeAtomicCounter;
 	GLuint computeDrawParticles;
+	void CompileComputeShader(GLuint* program, const char* path);
 	void InitCompute();
-	void DoCompute(GLfloat t);
 
-
+public:
 	Particles(GLuint numParticles, GLfloat initRadius);
 
 	bool Init(Camera* setCam);
+	void DoCompute(GLfloat t);
 	void Update(GLfloat t);
 	void Cull();
 	void Draw();
+
 
 	void ToggleDrawModels() { renderModels = !renderModels; }
 	void ToggleUpdate() { doUpdate = !doUpdate; }
 
 	GLuint *GetParticlesPtr() { return &particles; }
-	GLuint *GetDrawParticlesPtr() { return &drawParticles; }
+	GLuint *GetDrawParticlesPtr() { return &computeDrawParticles; }
 
 	const GLint GetParticles() { return particles; }
 	const GLint GetDrawParticles() { return drawParticles; }

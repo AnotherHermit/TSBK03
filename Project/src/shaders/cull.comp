@@ -1,6 +1,6 @@
 #version 430
 
-layout(local_size_x = 16) in;
+layout(local_size_x = 64) in;
 
 layout(binding = 0) buffer inBuffer {
 	float data[];
@@ -23,34 +23,32 @@ void main(void) {
 
 	vec3 pos = vec3(inParticles.data[currentParticle], inParticles.data[currentParticle + 1], inParticles.data[currentParticle + 2]);
 
-	int intersections = 0;
 	int i = 0;
 	bool keepPoint = true;
 
 	vec3 new_point = pos + boxNormals[i] * radius;
 	float distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
-	keepPoint = (distance < 0);
+	keepPoint = (distance > 0);
 	i++;
 	
 	new_point = pos + boxNormals[i] * radius;
 	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
-	keepPoint = keepPoint && (distance < 0);
+	keepPoint = keepPoint && (distance > 0);
 	i++;
 
 	new_point = pos + boxNormals[i] * radius;
 	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
-	keepPoint = keepPoint && (distance < 0);
+	keepPoint = keepPoint && (distance > 0);
 	i++;
 
 	new_point = pos + boxNormals[i] * radius;
 	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
-	keepPoint = keepPoint && (distance < 0);
+	keepPoint = keepPoint && (distance > 0);
 	i++;
 
 	new_point = pos + boxNormals[i] * radius;
 	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
-	keepPoint = keepPoint && (distance < 0);
-	i++;
+	keepPoint = keepPoint && (distance > 0);
 
 	if(keepPoint) {
 		outParticleNum = atomicCounterIncrement(particlesToRender);
