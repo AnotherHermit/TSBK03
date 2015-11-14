@@ -32,7 +32,7 @@ Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 bool Particles::Init(Camera* setCam) {
 	SetParticleData();
 	InitGLStates();
-
+	InitCompute();
 	cam = setCam;
 
 	model = new Sphere(1.0f);
@@ -100,6 +100,100 @@ void Particles::SetParticleData() {
 			}
 		}
 	}
+}
+
+
+void CompileComputeShader(GLuint* program, const char* path) {
+	*program = glCreateProgram();
+	GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
+
+	char* cs = readFile((char *)path);
+	if (cs == NULL) {
+		printf("Error reading shader!\n");
+	}
+
+	glShaderSource(computeShader, 1, &cs, NULL);
+	glCompileShader(computeShader);
+	printShaderInfoLog(computeShader, path);
+	//get errors 
+
+	glAttachShader(*program, computeShader);
+	glLinkProgram(*program);
+	//get errors from the program linking.
+	printProgramInfoLog(*program, path, NULL, NULL, NULL, NULL);
+
+	printError("Compile compute shader error!");
+}
+
+void Particles::InitCompute() {
+
+	CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
+	CompileComputeShader(&computeCull, "src/shaders/cull.comp");
+
+	int setCounter = 0;
+
+	//create buffers
+	glGenBuffers(2, computeBuffers);
+	glGenBuffers(1, &computeAtomicCounter);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[0]);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 9 * particles, particleData.data(), GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[1]);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 3 * particles, NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, computeAtomicCounter);
+	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &setCounter, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
+
+	printError("init Compute Error");
+}
+
+void Particles::DoCompute(GLfloat t) {
+	GLfloat deltaT = t - oldT;
+
+	model->Update(t);
+	billboard->Update(t);
+
+	glUseProgram(computeUpdate);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeBuffers[0]);
+	glUniform1f(glGetUniformLocation(computeUpdate, "deltaT"), deltaT);
+	glDispatchCompute(particles / 16, 1, 1);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[0]);
+	GLfloat* ptr1 = (GLfloat*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, NULL, 9 * 3 * sizeof(GLfloat), GL_MAP_READ_BIT);
+	printf("Updated points:\n");
+	for (int i = 0; i < 9 * 3; i++) {
+		printf("%f \n", ptr1[i]);
+	}
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+	glUseProgram(computeCull);
+	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 2, computeBuffers);
+	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, computeAtomicCounter);
+	glUniform3fv(glGetUniformLocation(cullShader, "boxNormals"), 5, cam->GetCullingNormals());
+	glUniform3fv(glGetUniformLocation(cullShader, "boxPoints"), 5, cam->GetCullingPoints());
+	glUniform1f(glGetUniformLocation(cullShader, "radius"), radius);
+	glDispatchCompute(particles / 16, 1, 1);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[1]);
+	ptr1 = (GLfloat*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, NULL, 3 * 3 * sizeof(GLfloat), GL_MAP_READ_BIT);
+	printf("Non culled points:\n");
+	for (int i = 0; i < 9 * 3; i++) {
+		printf("%f \n", ptr1[i]);
+	}
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, computeAtomicCounter);
+	GLuint* ptr2 = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, NULL, sizeof(GLuint), GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
+	computeDrawParticles = *ptr2;
+	*ptr2 = 0; 
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	printf("Number of non-culled points: %u\n", computeDrawParticles);
 }
 
 void Particles::InitGLStates() {
@@ -178,7 +272,7 @@ void Particles::Update(GLfloat t) {
 
 	glUseProgram(updateShader);
 	glUniform1f(glGetUniformLocation(updateShader, "deltaT"), deltaT);
-	glUniform1f(glGetUniformLocation(updateShader, "t"), t);
+	//glUniform1f(glGetUniformLocation(updateShader, "t"), t);
 
 	printError("Particles Update");
 	if (doUpdate && particles > 0) {

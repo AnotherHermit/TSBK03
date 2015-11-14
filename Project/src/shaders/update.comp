@@ -1,0 +1,46 @@
+#version 430
+
+layout(local_size_x = 16) in;
+
+layout (binding = 0) buffer inBuffer
+{
+    float data[];  
+} inParticles;
+
+/*
+layout (binding = 1) buffer outBuffer
+{
+    float data[];
+} outParticles;
+*/
+uniform float deltaT;
+//uniform float t;
+
+void main() {
+   
+    uint currentParticle = 9 * gl_GlobalInvocationID.x;
+    float dT = deltaT * 0.001;
+
+    vec3 pos = vec3(inParticles.data[currentParticle], inParticles.data[currentParticle + 1], inParticles.data[currentParticle + 2]);
+    vec3 vel = vec3(inParticles.data[currentParticle + 3], inParticles.data[currentParticle + 4], inParticles.data[currentParticle + 5]);
+    vec3 acc = vec3(inParticles.data[currentParticle + 6], inParticles.data[currentParticle + 7], inParticles.data[currentParticle + 8]);
+
+    // Position update
+	inParticles.data[currentParticle] = pos.x + vel.x * dT;
+	inParticles.data[currentParticle + 1] = pos.y + vel.y * dT;
+	inParticles.data[currentParticle + 2] = pos.z + vel.z * dT;
+
+    // Velocity update
+	inParticles.data[currentParticle + 3] = vel.x + acc.x * dT * 0.1;
+	inParticles.data[currentParticle + 4] = vel.y + acc.y * dT * 0.1;
+	inParticles.data[currentParticle + 5] = vel.z + acc.z * dT * 0.1;
+
+    // Acceleration update
+	inParticles.data[currentParticle + 6] = pos.z * 0.001;
+	inParticles.data[currentParticle + 7] = 0.0f;
+	inParticles.data[currentParticle + 8] = -pos.x * 0.001;
+
+
+	//updateAccValue = normalize(vec3(100*sin(0.001*t), 0, 100*cos(0.001*t))-pos)*10000/(length(pos)+10.0);
+
+}

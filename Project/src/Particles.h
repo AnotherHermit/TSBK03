@@ -36,7 +36,16 @@ private:
 	void SetParticleData();
 	void InitGLStates();
 
+	
+
 public:
+	// Compute shader stuff
+	GLuint computeUpdate, computeCull, computeBuffers[2], computeAtomicCounter;
+	GLuint computeDrawParticles;
+	void InitCompute();
+	void DoCompute(GLfloat t);
+
+
 	Particles(GLuint numParticles, GLfloat initRadius);
 
 	bool Init(Camera* setCam);

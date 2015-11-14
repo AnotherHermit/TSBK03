@@ -68,7 +68,7 @@ bool Program::Init() {
 	cam->SetFrustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 150.0f);
 
 	// Set up particle system
-	particleSystem = new Particles(20, 1.0f);
+	particleSystem = new Particles(4, 1.0f);
 	particleSystem->Init(cam);
 
 	printError("After my stuff init: ");
@@ -190,6 +190,7 @@ void Program::Update() {
 
 	// Update the particles
 	particleSystem->Update(currentTime);
+	particleSystem->DoCompute(currentTime);
 
 	// Cull the non visible particles
 	particleSystem->Cull();

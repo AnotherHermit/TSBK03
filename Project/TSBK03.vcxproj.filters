@@ -57,6 +57,9 @@
     <ClCompile Include="src\Program.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\csTest.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common\GL_utilities.h">
@@ -89,6 +92,9 @@
     <ClInclude Include="src\Program.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\csTest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\billboard.frag">
@@ -113,6 +119,12 @@
       <Filter>Source Files\Shaders</Filter>
     </None>
     <None Include="src\shaders\update.vert">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="src\shaders\update.comp">
+      <Filter>Source Files\Shaders</Filter>
+    </None>
+    <None Include="src\shaders\cull.comp">
       <Filter>Source Files\Shaders</Filter>
     </None>
   </ItemGroup>

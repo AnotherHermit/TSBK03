@@ -1,0 +1,61 @@
+#version 430
+
+layout(local_size_x = 16) in;
+
+layout(binding = 0) buffer inBuffer {
+	float data[];
+} inParticles;
+
+layout(binding = 1) buffer outBuffer {
+	float data[];
+} cullPositions;
+
+// Atomic counter of rendered particles;
+layout(binding = 0) uniform atomic_uint particlesToRender;
+
+uniform float radius;
+uniform vec3 boxNormals[5];
+uniform vec3 boxPoints[5];
+
+void main(void) {
+	uint currentParticle = 9 * gl_GlobalInvocationID.x;
+	uint outParticleNum = 0;
+
+	vec3 pos = vec3(inParticles.data[currentParticle], inParticles.data[currentParticle + 1], inParticles.data[currentParticle + 2]);
+
+	int intersections = 0;
+	int i = 0;
+	bool keepPoint = true;
+
+	vec3 new_point = pos + boxNormals[i] * radius;
+	float distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	keepPoint = (distance < 0);
+	i++;
+	
+	new_point = pos + boxNormals[i] * radius;
+	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	keepPoint = keepPoint && (distance < 0);
+	i++;
+
+	new_point = pos + boxNormals[i] * radius;
+	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	keepPoint = keepPoint && (distance < 0);
+	i++;
+
+	new_point = pos + boxNormals[i] * radius;
+	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	keepPoint = keepPoint && (distance < 0);
+	i++;
+
+	new_point = pos + boxNormals[i] * radius;
+	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	keepPoint = keepPoint && (distance < 0);
+	i++;
+
+	if(keepPoint) {
+		outParticleNum = atomicCounterIncrement(particlesToRender);
+		cullPositions.data[outParticleNum * 3] = pos.x;
+		cullPositions.data[outParticleNum * 3 + 1] = pos.y;
+		cullPositions.data[outParticleNum * 3 + 2] = pos.z;
+	}
+}

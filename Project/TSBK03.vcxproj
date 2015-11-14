@@ -174,6 +174,7 @@
     <ClCompile Include="src\common\loadobj.cc" />
     <ClCompile Include="src\common\LoadTGA.cc" />
     <ClCompile Include="src\common\Windows\glew.c" />
+    <ClCompile Include="src\csTest.cc" />
     <ClCompile Include="src\Drawable.cc" />
     <ClCompile Include="src\Particles.cc" />
     <ClCompile Include="src\Program.cc" />
@@ -186,6 +187,7 @@
     <ClInclude Include="src\common\LoadTGA.h" />
     <ClInclude Include="src\common\Windows\glew.h" />
     <ClInclude Include="src\common\Windows\wglew.h" />
+    <ClInclude Include="src\csTest.h" />
     <ClInclude Include="src\Drawable.h" />
     <ClInclude Include="src\Particles.h" />
     <ClInclude Include="src\Program.h" />
@@ -194,10 +196,12 @@
     <None Include="src\shaders\billboard.frag" />
     <None Include="src\shaders\billboard.geom" />
     <None Include="src\shaders\billboard.vert" />
+    <None Include="src\shaders\cull.comp" />
     <None Include="src\shaders\culling.geom" />
     <None Include="src\shaders\culling.vert" />
     <None Include="src\shaders\particle.frag" />
     <None Include="src\shaders\particle.vert" />
+    <None Include="src\shaders\update.comp" />
     <None Include="src\shaders\update.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
