@@ -196,6 +196,7 @@
     <None Include="src\shaders\billboard.frag" />
     <None Include="src\shaders\billboard.geom" />
     <None Include="src\shaders\billboard.vert" />
+    <None Include="src\shaders\bin.comp" />
     <None Include="src\shaders\cull.comp" />
     <None Include="src\shaders\culling.geom" />
     <None Include="src\shaders\culling.vert" />

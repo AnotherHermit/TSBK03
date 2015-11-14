@@ -2,35 +2,31 @@
 
 layout(local_size_x = 64) in;
 
-layout (binding = 0) buffer inBuffer
+struct Particle {
+	vec3 position;
+	uint bin;
+	vec3 velocity;
+	uint padding;
+};
+
+layout (std140, binding = 0) buffer ParticleBuffer
 {
-    float data[];  
-} inParticles;
+    Particle data[];  
+} particles;
 
 uniform float deltaT;
 
 void main() {
    
-    uint currentParticle = 9 * gl_GlobalInvocationID.x;
+    uint currentParticle = gl_GlobalInvocationID.x;
     float dT = deltaT * 0.001;
 
-    vec3 pos = vec3(inParticles.data[currentParticle], inParticles.data[currentParticle + 1], inParticles.data[currentParticle + 2]);
-    vec3 vel = vec3(inParticles.data[currentParticle + 3], inParticles.data[currentParticle + 4], inParticles.data[currentParticle + 5]);
-    vec3 acc = vec3(inParticles.data[currentParticle + 6], inParticles.data[currentParticle + 7], inParticles.data[currentParticle + 8]);
+    vec3 pos = particles.data[currentParticle].position;
+    vec3 vel = particles.data[currentParticle].velocity;
 
     // Position update
-	inParticles.data[currentParticle] = pos.x + vel.x * dT;
-	inParticles.data[currentParticle + 1] = pos.y + vel.y * dT;
-	inParticles.data[currentParticle + 2] = pos.z + vel.z * dT;
+	particles.data[currentParticle].position = pos + vel * dT;
 
     // Velocity update
-	inParticles.data[currentParticle + 3] = vel.x + acc.x * dT * 0.1;
-	inParticles.data[currentParticle + 4] = vel.y + acc.y * dT * 0.1;
-	inParticles.data[currentParticle + 5] = vel.z + acc.z * dT * 0.1;
-
-    // Acceleration update
-	vec3 dir = normalize(pos);
-	inParticles.data[currentParticle + 6] = -dir.x * 0.0001;
-	inParticles.data[currentParticle + 7] = 0.0f;
-	inParticles.data[currentParticle + 8] = -dir.z * 0.0001;
+	particles.data[currentParticle].velocity = 0.0001 * vec3(-pos.z, 0, pos.x);
 }

@@ -1,12 +1,12 @@
 //		Shader programs needed to perform flocking on GPU 
 
-// 1.	Calculate bin and increase bin counters (Comp Shader)
+// 1.	Calculate bin and increase bin counters (Comp Shader) #DONE
 //		Input: buffer with particles (1), cleared bin buffer (1)
 //		Work: calculates particle bin and assigns it (totaly independent),
 //			atomicAdd to the counter of the bin (partially independent)
 //		Output: Bin in particles and updated bin buffer
 
-// 2.	Prefix sum over all bins (Comp Shader or CPU)
+// 2.	Prefix sum over all bins (Comp Shader or CPU) #DONEONCPU
 //		Input: updated bin buffer
 //		Output: prefix sum buffer (new buffer or reuse the same? pingpong?)
 
@@ -24,7 +24,7 @@
 //			Performs the flocking calculations per read other particle and updates the output.
 //		Output: Updated particles 
 
-// 5.	Cull particles (Comp Shader)	#DONE
+// 5.	Cull particles (Comp Shader)	#DONE 
 //		Input: Updated particles, culled particles buffer, atomicCounter for number remaining
 //			Normals and a point for each frustum plane and the particle radius
 //		Work: Calculates if a particle has some part of the surface within the frustum
@@ -32,6 +32,8 @@
 //		Output: Counter of the number of remaining particles, buffer of particle positions
 //		Idea: Cull the grid instead in a first pass and then only output the particles that belong to
 //			the non-culled grids.
+//		Idea: Cull the particles as they are about to be drawn (drop them in geometry shader)
+//			this means no data transfer back to CPU.
 
 // 6.	Draw particles (Billboards) (Vert+Geom+Frag Shader)	#DONE
 //		Input: Vertex array of points, radius

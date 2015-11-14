@@ -8,6 +8,13 @@
 
 #include <vector>
 
+struct ParticleStruct {
+	glm::vec3 position;
+	GLuint bin;
+	glm::vec3 velocity;
+	GLuint padding;
+};
+
 class Particles {
 private:
 	// Transform feedback
@@ -16,12 +23,16 @@ private:
 	GLuint updateShader, cullShader;
 	GLuint qId;
 	GLint currVAO, currTFB;
-	
+
 	// Particle info
 	GLfloat radius;
 	GLuint startMode;
 	GLuint particles, drawParticles, setParticles;
-	std::vector<GLfloat> particleData;
+	std::vector<ParticleStruct> particleData;
+
+	// Bin info
+	GLuint bins;
+	GLuint *prefixArrayIn, *prefixArrayOut;
 
 	// Drawing stuff
 	Camera* cam;
@@ -37,7 +48,8 @@ private:
 	void InitGLStates();
 
 	// Compute shader stuff
-	GLuint computeUpdate, computeCull, computeBuffers[2], computeAtomicCounter;
+	GLuint particleBuffers[3], binBuffers[2], counterBuffer;
+	GLuint computeUpdate, computeCull, computeBin;
 	GLuint computeDrawParticles;
 	void CompileComputeShader(GLuint* program, const char* path);
 	void InitCompute();

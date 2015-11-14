@@ -2,11 +2,19 @@
 
 layout(local_size_x = 64) in;
 
-layout(binding = 0) buffer inBuffer {
-	float data[];
-} inParticles;
+struct Particle {
+	vec3 position;
+	uint bin;
+	vec3 velocity;
+	uint padding;
+};
 
-layout(binding = 1) buffer outBuffer {
+layout (std140, binding = 0) buffer ParticleBuffer
+{
+    Particle data[];  
+} particles;
+
+layout(binding = 2) buffer CullBuffer {
 	float data[];
 } cullPositions;
 
@@ -18,11 +26,11 @@ uniform vec3 boxNormals[5];
 uniform vec3 boxPoints[5];
 
 void main(void) {
-	uint currentParticle = 9 * gl_GlobalInvocationID.x;
+	uint currentParticle = gl_GlobalInvocationID.x;
 	uint outParticleNum = 0;
 
-	vec3 pos = vec3(inParticles.data[currentParticle], inParticles.data[currentParticle + 1], inParticles.data[currentParticle + 2]);
-
+	vec3 pos = particles.data[currentParticle].position;
+	uint bin = particles.data[currentParticle].bin;
 	int i = 0;
 	bool keepPoint = true;
 
@@ -50,7 +58,7 @@ void main(void) {
 	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
 	keepPoint = keepPoint && (distance > 0);
 
-	if(keepPoint) {
+	if(keepPoint && bin == 4) {
 		outParticleNum = atomicCounterIncrement(particlesToRender);
 		cullPositions.data[outParticleNum * 3] = pos.x;
 		cullPositions.data[outParticleNum * 3 + 1] = pos.y;

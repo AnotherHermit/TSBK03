@@ -1,0 +1,33 @@
+#version 430
+
+layout(local_size_x = 64) in;
+
+struct Particle {
+	vec3 position;
+	uint bin;
+	vec3 velocity;
+	uint padding;
+};
+
+layout (std140, binding = 0) buffer ParticleBuffer {
+	Particle data[];
+} particles;
+
+layout (binding = 3) buffer BinCounterBuffer {
+	uint data[];
+} binCounter;
+
+																
+void main(void) {
+	uint currentParticle = gl_GlobalInvocationID.x;
+	
+	vec3 pos = particles.data[currentParticle].position;
+
+	// Calculate bin
+	uint xID = uint(pos.x > 0);
+	uint yID = uint(pos.y > 0);
+	uint zID = uint(pos.z > 0);
+	uint binID = xID + 2 * yID + 2 * 2 * zID;
+	particles.data[currentParticle].bin = binID;
+	atomicAdd(binCounter.data[binID], 1);
+}

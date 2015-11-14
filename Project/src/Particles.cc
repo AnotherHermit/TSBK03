@@ -13,41 +13,49 @@ Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 	drawParticles = 0;
 	radius = initRadius;
 	oldT = 0;
+	bins = 8;
 	startMode = 1;
 	currVAO = 0;
 	currTFB = 1;
 	doUpdate = false;
 	renderModels = false;
 
+	prefixArrayIn = (GLuint*)malloc(sizeof(GLuint) * bins);
+	prefixArrayOut = (GLuint*)malloc(sizeof(GLuint) * bins);
+
 	// Create the query ID
-	glGenQueries(1, &qId);
+	//glGenQueries(1, &qId);
 	// Generate Buffers
-	glGenBuffers(2, updateBuffer);
-	glGenBuffers(1, &cullingBuffer);
+	//glGenBuffers(2, updateBuffer);
+	//glGenBuffers(1, &cullingBuffer);
 	// Generate VAO's
-	glGenVertexArrays(2, updateVAO);
-	glGenVertexArrays(2, cullingVAO);
+	//glGenVertexArrays(2, updateVAO);
+	//glGenVertexArrays(2, cullingVAO);
 
 
 	//create buffers
-	glGenBuffers(2, computeBuffers);
-	glGenBuffers(1, &computeAtomicCounter);
+	glGenBuffers(3, particleBuffers);
+	glGenBuffers(2, binBuffers);
+	glGenBuffers(1, &counterBuffer);
 }
 
 bool Particles::Init(Camera* setCam) {
-	SetParticleData();
 	//InitGLStates();
 
+	SetParticleData();
+
+	CompileComputeShader(&computeBin, "src/shaders/bin.comp");
 	CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
 	CompileComputeShader(&computeCull, "src/shaders/cull.comp");
+
 	InitCompute();
 	cam = setCam;
 
 	model = new Sphere(1.0f);
-	model->Init(setCam, computeBuffers[1]);
+	model->Init(setCam, particleBuffers[2]);
 
 	billboard = new Billboard(1.0f);
-	billboard->Init(setCam, computeBuffers[1]);
+	billboard->Init(setCam, particleBuffers[2]);
 
 	printError("Particles Constructor");
 	return true;
@@ -84,7 +92,7 @@ void Particles::SetParticleData() {
 		offsetY = offset;
 	}
 
-	particleData.resize(particles * 9);
+	particleData.resize(particles);
 
 	unsigned int ind = 0;
 	// Create the instance data
@@ -92,19 +100,22 @@ void Particles::SetParticleData() {
 		for (unsigned int j = 0; j < setParticles; ++j) {
 			for (unsigned int k = 0; k < setParticles; ++k) {
 				// Generate positions
-				particleData[ind++] = (((float)i + offset)  * 2.0f * radius); // X
-				particleData[ind++] = (((float)j + offsetY) * 2.0f * radius); // Y
-				particleData[ind++] = (((float)k + offset)  * 2.0f * radius); // Z
+				particleData[ind].position.x = (((float)i + offset)  * 2.0f * radius); // X
+				particleData[ind].position.y = (((float)j + offsetY) * 2.0f * radius); // Y
+				particleData[ind].position.z = (((float)k + offset)  * 2.0f * radius); // Z
+
+				// Initiate cell
+				particleData[ind].bin = 0;
 
 				// Generate velocities
-				particleData[ind++] = (0.0f); // X
-				particleData[ind++] = (0.0f); // Y
-				particleData[ind++] = (0.0f); // Z
+				particleData[ind].velocity.x = (0.0f); // X
+				particleData[ind].velocity.y = (0.0f); // Y
+				particleData[ind].velocity.z = (0.0f); // Z
 
-				// Set acceleration
-				particleData[ind++] = (0.0f); // X
-				particleData[ind++] = (0.0f); // Y
-				particleData[ind++] = (0.0f); // Z
+				// Just fill it with something
+				particleData[ind].padding = 7;
+
+				ind++;
 			}
 		}
 	}
@@ -136,28 +147,48 @@ void Particles::InitCompute() {
 
 	int setCounter = 0;
 
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[0]);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 9 * particles, particleData.data(), GL_STREAM_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[0]);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, particleData.data(), GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeBuffers[1]);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[1]);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, NULL, GL_STREAM_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[2]);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 3 * particles, NULL, GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, computeAtomicCounter);
+	printError("init Compute Error 1");
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * bins, NULL, GL_STREAM_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[1]);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * bins, NULL, GL_STREAM_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	printError("init Compute Error 2");
+
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer);
 	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &setCounter, GL_STREAM_READ);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
-	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 2, computeBuffers);
-	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, computeAtomicCounter);
+	printError("init Compute Error 3");
+
+	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 3, particleBuffers);
+	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 3, 2, binBuffers);
+	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, counterBuffer);
 
 	particleData.clear();
 
-	printError("init Compute Error");
+	printError("init Compute Error 4");
 }
 
 void Particles::DoCompute(GLfloat t) {
 	GLfloat deltaT = t - oldT;
+	GLuint reset = 0;
 
 	if (renderModels) {
 		model->Update(t);
@@ -165,23 +196,48 @@ void Particles::DoCompute(GLfloat t) {
 		billboard->Update(t);
 	}
 	
+	// ========== Calculate Bin =========
+	glUseProgram(computeBin);
+	glDispatchCompute(particles / 64, 1, 1);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * bins, prefixArrayIn);
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	// ========== Calculate Prefix sum =========
+
+	prefixArrayOut[0] = 0;
+	for (size_t i = 1; i < bins; i++) {
+		prefixArrayOut[i] = prefixArrayIn[i] + prefixArrayOut[i-1];
+	}
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[1]);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * bins, prefixArrayOut, GL_STREAM_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	// ========== Sort Particles =========
+
+	// ========== Update Particles =========
 	if (doUpdate) {
 		glUseProgram(computeUpdate);
 		glUniform1f(glGetUniformLocation(computeUpdate, "deltaT"), deltaT);
 		glDispatchCompute(particles / 64, 1, 1);
 	}
 
+	// ========== Cull Particles =========
 	glUseProgram(computeCull);
 	glUniform3fv(glGetUniformLocation(computeCull, "boxNormals"), 5, cam->GetCullingNormals());
 	glUniform3fv(glGetUniformLocation(computeCull, "boxPoints"), 5, cam->GetCullingPoints());
 	glUniform1f(glGetUniformLocation(computeCull, "radius"), radius);
 	glDispatchCompute(particles / 64, 1, 1);
 
-	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, computeAtomicCounter);
-	GLuint* ptr2 = (GLuint*)glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_READ_WRITE | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_UNSYNCHRONIZED_BIT);
-	computeDrawParticles = *ptr2;
-	*ptr2 = 0; 
-	glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer);
+	glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0,sizeof(GLuint), &computeDrawParticles);
+	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
+	printError("Do Compute Error");
 }
 
 void Particles::InitGLStates() {
