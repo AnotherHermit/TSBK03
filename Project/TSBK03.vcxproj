@@ -202,6 +202,7 @@
     <None Include="src\shaders\culling.vert" />
     <None Include="src\shaders\particle.frag" />
     <None Include="src\shaders\particle.vert" />
+    <None Include="src\shaders\sort.comp" />
     <None Include="src\shaders\update.comp" />
     <None Include="src\shaders\update.vert" />
   </ItemGroup>

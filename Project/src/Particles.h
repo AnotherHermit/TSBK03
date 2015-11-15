@@ -51,8 +51,9 @@ private:
 
 	// Compute shader stuff
 	GLuint particleBuffers[3], binBuffers[2], counterBuffer;
-	GLuint computeUpdate, computeCull, computeBin;
+	GLuint computeBin, computeSort, computeUpdate, computeCull;
 	GLuint computeDrawParticles;
+	GLuint inBufferIndex, outBufferIndex;
 	void CompileComputeShader(GLuint* program, const char* path);
 	void InitCompute();
 

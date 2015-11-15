@@ -9,7 +9,7 @@ struct Particle {
 	uint padding;
 };
 
-layout (std140, binding = 0) buffer ParticleBuffer
+layout (std140, binding = 1) buffer ParticleBuffer
 {
     Particle data[];  
 } particles;

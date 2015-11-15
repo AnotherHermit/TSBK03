@@ -23,6 +23,9 @@ Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 	doUpdate = false;
 	renderModels = false;
 
+	inBufferIndex = 0;
+	outBufferIndex = 1;
+
 	prefixArrayIn = (GLuint*)malloc(sizeof(GLuint) * bins);
 	prefixArrayOut = (GLuint*)malloc(sizeof(GLuint) * bins);
 
@@ -48,6 +51,7 @@ bool Particles::Init(Camera* setCam) {
 	SetParticleData();
 
 	CompileComputeShader(&computeBin, "src/shaders/bin.comp");
+	CompileComputeShader(&computeSort, "src/shaders/sort.comp");
 	CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
 	CompileComputeShader(&computeCull, "src/shaders/cull.comp");
 
@@ -230,7 +234,9 @@ void Particles::DoCompute(GLfloat t) {
 	printError("Do Compute: Prefix");
 
 	// ========== Sort Particles =========
-
+	glUseProgram(computeSort);
+	glDispatchCompute(particles / 64, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Sort");
 
@@ -240,6 +246,9 @@ void Particles::DoCompute(GLfloat t) {
 		glUniform1f(glGetUniformLocation(computeUpdate, "deltaT"), deltaT);
 		glDispatchCompute(particles / 64, 1, 1);
 	}
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	printError("Do Compute: Update");
 
@@ -255,6 +264,14 @@ void Particles::DoCompute(GLfloat t) {
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
 	printError("Do Compute: Culling");
+
+	// ========== Swap Buffers =========
+	inBufferIndex = outBufferIndex;
+	outBufferIndex = 1 - inBufferIndex;
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffers[inBufferIndex]);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particleBuffers[outBufferIndex]);
+
+	printError("Do Compute: Swap in/out buffer");
 }
 
 void Particles::InitGLStates() {

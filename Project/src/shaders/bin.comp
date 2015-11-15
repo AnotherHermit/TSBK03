@@ -30,7 +30,6 @@ void main(void) {
 	// Calculate bin
 	vec3 pos2id = min(max(floor(pos / binSize), -float(binsPerSide)), float(binsPerSide) - 1) + binsPerSide;
 
-
 	uint xID = uint(pos2id.x);
 	uint yID = uint(pos2id.y);
 	uint zID = uint(pos2id.z);

@@ -139,5 +139,8 @@
     <None Include="src\shaders\bin.comp">
       <Filter>Source Files\Shaders\Compute</Filter>
     </None>
+    <None Include="src\shaders\sort.comp">
+      <Filter>Source Files\Shaders\Compute</Filter>
+    </None>
   </ItemGroup>
 </Project>
