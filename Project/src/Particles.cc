@@ -13,7 +13,10 @@ Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 	drawParticles = 0;
 	radius = initRadius;
 	oldT = 0;
-	bins = 8;
+	numBins = 16;
+	bins = numBins*numBins*numBins;
+	binSize = 4.0f;
+	displaybin = 0;
 	startMode = 1;
 	currVAO = 0;
 	currTFB = 1;
@@ -147,9 +150,11 @@ void Particles::InitCompute() {
 
 	int setCounter = 0;
 
+	// Initialize buffers
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[0]);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, particleData.data(), GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	particleData.clear();
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[1]);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, NULL, GL_STREAM_COPY);
@@ -181,7 +186,13 @@ void Particles::InitCompute() {
 	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 3, 2, binBuffers);
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, counterBuffer);
 
-	particleData.clear();
+	// Set unchanging uniforms
+	glUseProgram(computeBin);
+	glUniform1ui(glGetUniformLocation(computeBin, "numBins"), numBins);
+	glUniform1f(glGetUniformLocation(computeBin, "binSize"), binSize);
+
+	glUseProgram(computeCull);
+	glUniform1f(glGetUniformLocation(computeCull, "radius"), radius);
 
 	printError("init Compute Error 4");
 }
@@ -199,24 +210,29 @@ void Particles::DoCompute(GLfloat t) {
 	// ========== Calculate Bin =========
 	glUseProgram(computeBin);
 	glDispatchCompute(particles / 64, 1, 1);
-
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
 	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * bins, prefixArrayIn);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-	// ========== Calculate Prefix sum =========
+	printError("Do Compute: Bin");
 
+	// ========== Calculate Prefix sum =========
 	prefixArrayOut[0] = 0;
 	for (size_t i = 1; i < bins; i++) {
-		prefixArrayOut[i] = prefixArrayIn[i] + prefixArrayOut[i-1];
+		prefixArrayOut[i] = prefixArrayIn[i-1] + prefixArrayOut[i-1];
+		//std::cout << prefixArrayOut[i] << std::endl;
 	}
-
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[1]);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * bins, prefixArrayOut, GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
+	printError("Do Compute: Prefix");
+
 	// ========== Sort Particles =========
+
+
+	printError("Do Compute: Sort");
 
 	// ========== Update Particles =========
 	if (doUpdate) {
@@ -225,19 +241,20 @@ void Particles::DoCompute(GLfloat t) {
 		glDispatchCompute(particles / 64, 1, 1);
 	}
 
+	printError("Do Compute: Update");
+
 	// ========== Cull Particles =========
 	glUseProgram(computeCull);
 	glUniform3fv(glGetUniformLocation(computeCull, "boxNormals"), 5, cam->GetCullingNormals());
 	glUniform3fv(glGetUniformLocation(computeCull, "boxPoints"), 5, cam->GetCullingPoints());
-	glUniform1f(glGetUniformLocation(computeCull, "radius"), radius);
+	glUniform1ui(glGetUniformLocation(computeCull, "displaybin"), displaybin);
 	glDispatchCompute(particles / 64, 1, 1);
-
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer);
-	glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0,sizeof(GLuint), &computeDrawParticles);
+	glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &computeDrawParticles);
 	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
-	printError("Do Compute Error");
+	printError("Do Compute: Culling");
 }
 
 void Particles::InitGLStates() {

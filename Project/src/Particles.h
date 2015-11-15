@@ -31,8 +31,10 @@ private:
 	std::vector<ParticleStruct> particleData;
 
 	// Bin info
-	GLuint bins;
+	GLuint bins, numBins;
 	GLuint *prefixArrayIn, *prefixArrayOut;
+	GLuint displaybin;
+	GLfloat binSize;
 
 	// Drawing stuff
 	Camera* cam;
@@ -69,6 +71,7 @@ public:
 
 	GLuint *GetParticlesPtr() { return &particles; }
 	GLuint *GetDrawParticlesPtr() { return &computeDrawParticles; }
+	GLuint *GetDisplayBinPtr() { return &displaybin; }
 
 	const GLint GetParticles() { return particles; }
 	const GLint GetDrawParticles() { return drawParticles; }

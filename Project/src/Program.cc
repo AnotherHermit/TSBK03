@@ -80,12 +80,13 @@ bool Program::Init() {
 
 	TwDefine(" Particles refresh=0.1 ");
 	TwDefine(" Particles valueswidth=fit ");
-	TwDefine(" Particles size='230 130' ");
+	TwDefine(" Particles size='230 150' ");
 
 	TwAddVarRO(antBar, "Total Particles", TW_TYPE_INT32, particleSystem->GetParticlesPtr(), "group=Info");
 	TwAddVarRO(antBar, "Rendered Particles", TW_TYPE_INT32, particleSystem->GetDrawParticlesPtr(), "group=Info");
 	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, "group=Info");
 	TwAddVarRW(antBar, "MovSpeed", TW_TYPE_FLOAT, cam->SpeedPtr(), " min=0 max=1 step=0.001 group=Controls label='Movement speed' ");
+	TwAddVarRW(antBar, "Display Bin", TW_TYPE_UINT32, particleSystem->GetDisplayBinPtr(), " min=0 max=4096 step=4 group=Controls label='Display Bin' ");
 
 	printError("After AntBar init: ");
 

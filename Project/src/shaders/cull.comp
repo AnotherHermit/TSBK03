@@ -22,6 +22,7 @@ layout(binding = 2) buffer CullBuffer {
 layout(binding = 0) uniform atomic_uint particlesToRender;
 
 uniform float radius;
+uniform uint displaybin;
 uniform vec3 boxNormals[5];
 uniform vec3 boxPoints[5];
 
@@ -57,8 +58,8 @@ void main(void) {
 	new_point = pos + boxNormals[i] * radius;
 	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
 	keepPoint = keepPoint && (distance > 0);
-
-	if(keepPoint && bin == 4) {
+	// && bin == displaybin
+	if(keepPoint) {
 		outParticleNum = atomicCounterIncrement(particlesToRender);
 		cullPositions.data[outParticleNum * 3] = pos.x;
 		cullPositions.data[outParticleNum * 3 + 1] = pos.y;

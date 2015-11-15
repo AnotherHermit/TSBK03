@@ -17,17 +17,24 @@ layout (binding = 3) buffer BinCounterBuffer {
 	uint data[];
 } binCounter;
 
+uniform uint numBins;
+uniform float binSize;
 																
 void main(void) {
+	uint binsPerSide = numBins / 2;
+
 	uint currentParticle = gl_GlobalInvocationID.x;
 	
 	vec3 pos = particles.data[currentParticle].position;
 
 	// Calculate bin
-	uint xID = uint(pos.x > 0);
-	uint yID = uint(pos.y > 0);
-	uint zID = uint(pos.z > 0);
-	uint binID = xID + 2 * yID + 2 * 2 * zID;
+	vec3 pos2id = min(max(floor(pos / binSize), -float(binsPerSide)), float(binsPerSide) - 1) + binsPerSide;
+
+
+	uint xID = uint(pos2id.x);
+	uint yID = uint(pos2id.y);
+	uint zID = uint(pos2id.z);
+	uint binID = xID + numBins * yID + numBins * numBins * zID;
 	particles.data[currentParticle].bin = binID;
 	atomicAdd(binCounter.data[binID], 1);
 }
