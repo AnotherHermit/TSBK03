@@ -16,7 +16,7 @@ Camera::Camera(glm::vec3 startpos) {
 
 	mspeed = 100.0f;
 	rspeed = 0.001f;
-	phi = M_PI;
+	phi = 7 * M_PI / 4;
 	theta = M_PI / 2.0f;
 
 	// Set starting WTVmatrix
@@ -35,6 +35,7 @@ void Camera::ResetCamera(glm::vec3 pos) {
 }
 
 void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GLfloat in_top, GLfloat in_near, GLfloat in_far) {
+	viewDistance = in_far;
 	VTPmatrix = glm::frustum(in_left, in_right, in_bottom, in_top, in_near, in_far);
 
 	// Add all normals and vectors before transformation

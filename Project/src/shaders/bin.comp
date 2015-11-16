@@ -6,7 +6,7 @@ struct Particle {
 	vec3 position;
 	uint bin;
 	vec3 velocity;
-	uint padding;
+	uint ID;
 };
 
 layout (std140, binding = 0) buffer ParticleBuffer {
@@ -21,14 +21,14 @@ uniform uint numBins;
 uniform float binSize;
 																
 void main(void) {
-	uint binsPerSide = numBins / 2;
+	//uint binsPerSide = numBins / 2;
 
 	uint currentParticle = gl_GlobalInvocationID.x;
 	
 	vec3 pos = particles.data[currentParticle].position;
 
 	// Calculate bin
-	vec3 pos2id = min(max(floor(pos / binSize), -float(binsPerSide)), float(binsPerSide) - 1) + binsPerSide;
+	ivec3 pos2id = ivec3(min(max(floor(pos / binSize), 0.0f), float(numBins - 1)));
 
 	uint xID = uint(pos2id.x);
 	uint yID = uint(pos2id.y);

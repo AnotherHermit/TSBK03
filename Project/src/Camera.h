@@ -34,7 +34,7 @@ class Camera {
 private:
 	glm::vec3 p, lookp, yvec;
 	glm::vec3 heading, side, up;
-	GLfloat mspeed, rspeed, phi, theta;
+	GLfloat mspeed, rspeed, phi, theta, viewDistance;
 	bool isPaused;
 
 	glm::vec4 nontransPoints[5];
@@ -72,6 +72,7 @@ public:
 	const glm::vec3 GetSide() { return side; }
 	const glm::vec3 GetUp() { return up; }
 
+	GLfloat* ViewDistancePtr() { return &viewDistance; }
 	GLfloat* SpeedPtr() { return &mspeed; }
 	GLfloat* HeadingPtr() { return glm::value_ptr(heading); }
 

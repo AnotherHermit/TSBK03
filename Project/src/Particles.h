@@ -19,7 +19,7 @@ struct ParticleStruct {
 	glm::vec3 position;
 	GLuint bin;
 	glm::vec3 velocity;
-	GLuint padding;
+	GLuint ID;
 };
 
 class Particles {
@@ -29,6 +29,9 @@ private:
 	GLuint startMode;
 	GLuint particles, drawParticles, setParticles;
 	std::vector<ParticleStruct> particleData;
+
+	// Boid parameters
+	GLfloat coh, sep, ali, pre, speed;
 
 	// Bin info
 	GLuint bins, numBins;
@@ -60,7 +63,7 @@ public:
 	Particles(GLuint numParticles, GLfloat initRadius);
 
 	bool Init(Camera* setCam);
-	void DoCompute(GLfloat t);
+	void DoCompute(GLfloat t, GLfloat deltaT);
 	void Draw();
 
 	void ToggleDrawModels() { renderModels = !renderModels; }
@@ -69,6 +72,11 @@ public:
 	GLuint *GetParticlesPtr() { return &particles; }
 	GLuint *GetDrawParticlesPtr() { return &computeDrawParticles; }
 	GLuint *GetDisplayBinPtr() { return &displaybin; }
+	GLfloat *GetCohPtr() { return &coh; }
+	GLfloat *GetSepPtr() { return &sep; }
+	GLfloat *GetAliPtr() { return &ali; }
+	GLfloat *GetPrePtr() { return &pre; }
+	GLfloat *GetSpeedPtr() { return &speed; }
 
 	const GLint GetParticles() { return particles; }
 	const GLint GetDrawParticles() { return drawParticles; }

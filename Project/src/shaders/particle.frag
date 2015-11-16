@@ -15,6 +15,7 @@ out vec4 outColor;
 
 uniform float currT;
 uniform mat4 WTVmatrix;
+uniform float viewDistance;
 
 // Start From Stackoverflow
 vec3 hsv2rgb(vec3 c)
@@ -34,13 +35,13 @@ void main()
 	
 	// Calculate diffuse light
 	vec3 light = mat3(WTVmatrix) * vec3(0, 1, 0);
-	float shade = max(dot(normalize(exNormal), light), 0.10);
+	float shade = max(dot(normalize(exNormal), light), 0.1);
 	vec3 shadedColor = rgbColor * shade;
 	
 	// Calculate fog
 	float dist = length(exPosition);
-	float minFogDist = 70.0f;
-	float maxFogDist = 150.0f;
+	float minFogDist = viewDistance / 2;
+	float maxFogDist = viewDistance;
 	float fogFactor = clamp((dist - minFogDist)/(maxFogDist - minFogDist), 0.0f, 1.0f);
 	vec3 foggedColor = (1 - fogFactor) * shadedColor;
 			

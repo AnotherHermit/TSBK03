@@ -6,10 +6,10 @@ struct Particle {
 	vec3 position;
 	uint bin;
 	vec3 velocity;
-	uint padding;
+	uint ID;
 };
 
-layout (std140, binding = 1) readonly buffer ParticleBuffer
+layout (std140, binding = 0) readonly buffer ParticleBuffer
 {
     Particle data[];  
 } particles;

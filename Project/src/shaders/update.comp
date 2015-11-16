@@ -6,26 +6,131 @@ struct Particle {
 	vec3 position;
 	uint bin;
 	vec3 velocity;
-	uint padding;
+	uint ID;
 };
 
-layout (std140, binding = 1) buffer ParticleBuffer
+layout (std140, binding = 0) writeonly buffer ParticleBuffer1
 {
     Particle data[];  
-} particles;
+} particlesOut;
+
+layout (std140, binding = 1) readonly buffer ParticleBuffer2
+{
+    Particle data[];  
+} particlesIn;
+
+layout (binding = 3) readonly buffer BinCounterBuffer {
+	uint data[];
+} binCounter;
+
+layout (binding = 4) readonly buffer PrefixSumBuffer {
+	uint data[];
+} prefixSum;
 
 uniform float deltaT;
+uniform uint numBins;
+uniform float binSize;
+
+uniform float cohWeight;
+uniform float sepWeight;
+uniform float aliWeight;
+uniform float preWeight;
+uniform float speed;
 
 void main() {
    
     uint currentParticle = gl_GlobalInvocationID.x;
 
-    vec3 pos = particles.data[currentParticle].position;
-    vec3 vel = particles.data[currentParticle].velocity;
+    vec3 pos = particlesIn.data[currentParticle].position;
+    vec3 vel = particlesIn.data[currentParticle].velocity;
+	uint thisBin = particlesIn.data[currentParticle].bin;
+	uint thisID = particlesIn.data[currentParticle].ID;
+
+	float areaSize = float(numBins) * binSize;
+
+	// Check that no particles escape!
+	if(pos.x < 0) {
+		vel.x = abs(vel.x);
+	}
+	if(pos.y < 0) {
+		vel.y = abs(vel.y);
+	}
+	if(pos.z < 0) {
+		vel.z = abs(vel.z);
+	}
+	if(pos.x > areaSize) {
+		vel.x = -abs(vel.x);
+	}
+	if(pos.y > areaSize) {
+		vel.y = -abs(vel.y);
+	}
+	if(pos.z > areaSize) {
+		vel.z = -abs(vel.z);
+	}
+
+
+	// Calculate boid update for all boids in neighbouring bins
+	ivec3 pos2id = ivec3(min(max(floor(pos / binSize), 0.0f), float(numBins - 1)));
+	ivec3 startID = ivec3(max(pos2id - 1, 0));
+	ivec3 endID = ivec3(min(pos2id + 1, numBins - 1));
+	vec3 thatPos, thatVel;
+	uint thatID, thatBin, thatIndex;
+	float dist, scale;
+	uint matches = 0;
+	vec3 cohVec = vec3(0.0f), sepVec = vec3(0.0f), aliVec = vec3(0.0f);
+	vec3 dir;
+
+	int x, y, z, ind;
+	for(z = startID.z; z <= endID.z; z++) {
+		for(y = startID.y; y <= endID.y; y++) {
+			for (x = startID.x; x <= endID.x; x++) {
+				thatBin = x + numBins * y + numBins * numBins * z;
+				thatIndex = prefixSum.data[thatBin];
+				for (ind = 0; ind < binCounter.data[thatBin]; ind++){
+					thatID = particlesIn.data[thatIndex + ind].ID;
+					thatPos = particlesIn.data[thatIndex + ind].position;
+					thatVel = particlesIn.data[thatIndex + ind].velocity;
+					dist = length(pos - thatPos);
+
+					if(thatID != thisID && dist < binSize){
+						matches++;
+
+						cohVec += thatPos;
+						
+						scale = (dist - binSize) / dist;
+						dir = normalize(thatPos - pos);
+						sepVec += dir * scale;
+						
+						dir = normalize(thatVel);
+						aliVec += dir;
+					}
+				}
+			}
+		}
+	}
+
+	if(matches > 0){
+		cohVec /= float(matches);
+		cohVec -= pos;
+
+		cohVec = cohWeight * normalize(cohVec);
+		sepVec = sepWeight * normalize(sepVec);
+		aliVec = aliWeight * normalize(aliVec);
+		vel = preWeight * normalize(vel);
+		vel = speed * normalize(cohVec + sepVec + aliVec + vel);
+	}
+	
+	
 
     // Position update
-	particles.data[currentParticle].position = pos + vel * deltaT;
+	particlesOut.data[currentParticle].position = pos + vel * deltaT;
+
+	// Keep the bin of the particles
+	particlesOut.data[currentParticle].bin = thisBin;
 
     // Velocity update
-	particles.data[currentParticle].velocity = 0.0001 * vec3(-pos.z, 0, pos.x);
+	particlesOut.data[currentParticle].velocity = vel;
+
+	// Keep the ID of the particles
+	particlesOut.data[currentParticle].ID = thisID;
 }

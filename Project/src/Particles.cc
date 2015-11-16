@@ -9,22 +9,31 @@
 
 #include "GL_utilities.h"
 
+#include <cstdlib>
+#include <math.h>
+
 Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 	setParticles = numParticles;
 	particles = setParticles*setParticles*setParticles;
 	drawParticles = 0;
-	startMode = 1;
+	startMode = 0;
 	radius = initRadius;
 	oldT = 0;
+
+	speed = 10.0f;
+	pre = 1.0f;
+	coh = 0.03f;
+	sep = 0.03f;
+	ali = 0.03f;
 
 	doUpdate = false;
 	renderModels = false;
 
-	numBins = 16;
+	numBins = setParticles;
 	bins = numBins*numBins*numBins;
-	binSize = 4.0f;
+	binSize = 20.0f;
 	displaybin = 0;
-	
+
 	inBufferIndex = 0;
 	outBufferIndex = 1;
 
@@ -38,6 +47,8 @@ Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 }
 
 bool Particles::Init(Camera* setCam) {
+	srand(0);
+
 	SetParticleData();
 
 	CompileComputeShader(&computeBin, "src/shaders/bin.comp");
@@ -66,6 +77,9 @@ void Particles::SetParticles(GLuint newParticles, GLuint newType) {
 	setParticles = newParticles;
 	particles = setParticles*setParticles*setParticles;
 	startMode = newType;
+
+	numBins = setParticles;
+	bins = numBins*numBins*numBins;
 
 	SetParticleData();
 	InitCompute();
@@ -97,20 +111,20 @@ void Particles::SetParticleData() {
 		for (unsigned int j = 0; j < setParticles; ++j) {
 			for (unsigned int k = 0; k < setParticles; ++k) {
 				// Generate positions
-				particleData[ind].position.x = (((float)i + offset)  * 2.0f * radius); // X
-				particleData[ind].position.y = (((float)j + offsetY) * 2.0f * radius); // Y
-				particleData[ind].position.z = (((float)k + offset)  * 2.0f * radius); // Z
+				particleData[ind].position.x = fmod((float)rand(), (float)numBins * binSize); // X
+				particleData[ind].position.y = fmod((float)rand(), (float)numBins * binSize); // Y
+				particleData[ind].position.z = fmod((float)rand(), (float)numBins * binSize); // Z
 
 				// Initiate cell
 				particleData[ind].bin = 0;
 
 				// Generate velocities
-				particleData[ind].velocity.x = (0.0f); // X
-				particleData[ind].velocity.y = (0.0f); // Y
-				particleData[ind].velocity.z = (0.0f); // Z
+				particleData[ind].velocity.x = ((float)rand() / (float)RAND_MAX) - 0.5; // X
+				particleData[ind].velocity.y = ((float)rand() / (float)RAND_MAX) - 0.5; // Y
+				particleData[ind].velocity.z = ((float)rand() / (float)RAND_MAX) - 0.5; // Z
 
 				// Just fill it with something
-				particleData[ind].padding = 7;
+				particleData[ind].ID = ind;
 
 				ind++;
 			}
@@ -188,11 +202,14 @@ void Particles::InitCompute() {
 	glUseProgram(computeCull);
 	glUniform1f(glGetUniformLocation(computeCull, "radius"), radius);
 
+	glUseProgram(computeUpdate);
+	glUniform1ui(glGetUniformLocation(computeUpdate, "numBins"), numBins);
+	glUniform1f(glGetUniformLocation(computeUpdate, "binSize"), binSize);
+
 	printError("init Compute Error 4");
 }
 
-void Particles::DoCompute(GLfloat t) {
-	GLfloat deltaT = t - oldT;
+void Particles::DoCompute(GLfloat t, GLfloat deltaT) {
 	GLuint reset = 0;
 
 	if (renderModels) {
@@ -204,6 +221,7 @@ void Particles::DoCompute(GLfloat t) {
 	// ========== Calculate Bin =========
 	glUseProgram(computeBin);
 	glDispatchCompute(particles / 64, 1, 1);
+	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
 	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * bins, prefixArrayIn);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
@@ -220,6 +238,7 @@ void Particles::DoCompute(GLfloat t) {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[1]);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * bins, prefixArrayOut, GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Prefix");
 
@@ -234,17 +253,25 @@ void Particles::DoCompute(GLfloat t) {
 	if (doUpdate) {
 		glUseProgram(computeUpdate);
 		glUniform1f(glGetUniformLocation(computeUpdate, "deltaT"), deltaT);
+		glUniform1f(glGetUniformLocation(computeUpdate, "cohWeight"), coh);
+		glUniform1f(glGetUniformLocation(computeUpdate, "sepWeight"), sep);
+		glUniform1f(glGetUniformLocation(computeUpdate, "aliWeight"), ali);
+		glUniform1f(glGetUniformLocation(computeUpdate, "preWeight"), pre);
+		glUniform1f(glGetUniformLocation(computeUpdate, "speed"), speed);
 		glDispatchCompute(particles / 64, 1, 1);
+	} else {
+		inBufferIndex = outBufferIndex;
+		outBufferIndex = 1 - inBufferIndex;
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffers[inBufferIndex]);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particleBuffers[outBufferIndex]);
 	}
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
+	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 	printError("Do Compute: Update");
 
 	// ========== Cull Particles =========
-	//computeDrawParticles = particles;
-	
 	glUseProgram(computeCull);
 	glUniform3fv(glGetUniformLocation(computeCull, "boxNormals"), 5, cam->GetCullingNormals());
 	glUniform3fv(glGetUniformLocation(computeCull, "boxPoints"), 5, cam->GetCullingPoints());
@@ -254,16 +281,10 @@ void Particles::DoCompute(GLfloat t) {
 	glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &computeDrawParticles);
 	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-	
+	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
+
 	printError("Do Compute: Culling");
-
-	// ========== Swap Buffers =========
-	inBufferIndex = outBufferIndex;
-	outBufferIndex = 1 - inBufferIndex;
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffers[inBufferIndex]);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particleBuffers[outBufferIndex]);
-
-	printError("Do Compute: Swap in/out buffer");
+	
 }
 
 void Particles::Draw() {

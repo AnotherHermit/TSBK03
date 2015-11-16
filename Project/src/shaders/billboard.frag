@@ -16,6 +16,7 @@ out vec4 outColor;
 uniform float currT;
 uniform sampler2D texUnit;
 uniform mat4 WTVmatrix;
+uniform float viewDistance;
 
 // Start From Stackoverflow
 vec3 hsv2rgb(vec3 c)
@@ -33,24 +34,24 @@ void main()
 	vec3 hsvColor = vec3(hue, 1.0f, 1.0f);
 	vec3 rgbColor = hsv2rgb(hsvColor);
 
-		
+	// Calculate light
+	vec3 light = mat3(WTVmatrix) * vec3(0, 1, 0);
+	float shade = max(dot(normalize(exNormal), light), 0.1);
+	vec3 shadedColor = rgbColor * shade;
+
 	// Calculate fog
 	float dist = length(outPosition);
-	float minFogDist = 70.0f;
-	float maxFogDist = 150.0f;
+	float minFogDist = viewDistance / 2;
+	float maxFogDist = viewDistance;
 	float fogFactor = clamp((dist - minFogDist)/(maxFogDist - minFogDist), 0.0f, 1.0f);
-	vec3 foggedColor = (1 - fogFactor) * rgbColor;
-	
-	// Calculate light
-	vec3 light = vec3(0.0f, 1.0f, 0.0f);
-	float shade = max(dot(normalize(exNormal), mat3(WTVmatrix) * light), 0.1);
-	
+	vec3 foggedColor = (1 - fogFactor) * shadedColor;
+
 	// Get texture colors
 	vec4 texColor = texture(texUnit, texValue);
 	
 	// Output complete color
-	outColor =  texColor * vec4(foggedColor * shade, 0.2f);
+	outColor =  texColor * vec4(foggedColor, 1f);
 	
-	if(texColor.r < 0.85 && texColor.g < 0.85 && texColor.b < 0.85)
-		discard;
+	//if(texColor.r < 0.85 && texColor.g < 0.85 && texColor.b < 0.85)
+		//discard;
 }

@@ -6,7 +6,7 @@ struct Particle {
 	vec3 position;
 	uint bin;
 	vec3 velocity;
-	uint padding;
+	uint ID;
 };
 
 layout (std140, binding = 0) readonly buffer ParticleBuffer1
@@ -36,4 +36,5 @@ void main() {
 	particlesOut.data[outIndex].position = particlesIn.data[currentParticle].position;
 	particlesOut.data[outIndex].bin = bin;
 	particlesOut.data[outIndex].velocity = particlesIn.data[currentParticle].velocity;
+	particlesOut.data[outIndex].ID = particlesIn.data[currentParticle].ID;
 }

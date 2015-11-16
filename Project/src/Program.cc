@@ -83,13 +83,13 @@ bool Program::Init() {
 	printError("after wrapper inits");
 
 	// Set up the camera
-	cam = new Camera(glm::vec3(0.0, 0.0, 50.0));
-	cam->SetFrustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 150.0f);
+	cam = new Camera(glm::vec3(-100.0, 100.0, -100.0));
+	cam->SetFrustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1500.0f);
 
 	printError("after camera init");
 
 	// Set up particle system
-	particleSystem = new Particles(16, 1.0f);
+	particleSystem = new Particles(64, 1.0f);
 	particleSystem->Init(cam);
 
 	printError("after particle system init");
@@ -101,13 +101,21 @@ bool Program::Init() {
 
 	TwDefine(" Particles refresh=0.1 ");
 	TwDefine(" Particles valueswidth=fit ");
-	TwDefine(" Particles size='230 150' ");
+	TwDefine(" Particles size='230 250' ");
 
+	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, "group=Info");
 	TwAddVarRO(antBar, "Total Particles", TW_TYPE_INT32, particleSystem->GetParticlesPtr(), "group=Info");
 	TwAddVarRO(antBar, "Rendered Particles", TW_TYPE_INT32, particleSystem->GetDrawParticlesPtr(), "group=Info");
-	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, "group=Info");
-	TwAddVarRW(antBar, "MovSpeed", TW_TYPE_FLOAT, cam->SpeedPtr(), " min=0 max=200 step=1 group=Controls label='Movement speed' ");
-	TwAddVarRW(antBar, "Display Bin", TW_TYPE_UINT32, particleSystem->GetDisplayBinPtr(), " min=0 max=4095 step=1 group=Controls label='Display Bin' ");
+
+	TwAddVarRW(antBar, "Camera Speed", TW_TYPE_FLOAT, cam->SpeedPtr(), " min=0 max=200 step=10 group=Controls ");
+	TwAddVarRW(antBar, "View Distance", TW_TYPE_FLOAT, cam->ViewDistancePtr(), " min=0 max=2000 step=100 group=Controls ");
+	TwAddVarRW(antBar, "Display Bin", TW_TYPE_UINT32, particleSystem->GetDisplayBinPtr(), " min=0 max=4095 step=1 group=Controls ");
+
+	TwAddVarRW(antBar, "Particle speed", TW_TYPE_FLOAT, particleSystem->GetSpeedPtr(), " min=0 max=200 step=5 group=Boid ");
+	TwAddVarRW(antBar, "Previous", TW_TYPE_FLOAT, particleSystem->GetPrePtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Cohesion", TW_TYPE_FLOAT, particleSystem->GetCohPtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Separation", TW_TYPE_FLOAT, particleSystem->GetSepPtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Alignment", TW_TYPE_FLOAT, particleSystem->GetAliPtr(), " min=0 max=1 step=0.01 group=Boid ");
 
 	printError("after AntBar init");
 
@@ -211,7 +219,7 @@ void Program::Update() {
 	cam->UpdateCamera();
 
 	// Update the particles
-	particleSystem->DoCompute(currentTime);
+	particleSystem->DoCompute(currentTime, deltaTime);
 
 	printError("after update");
 }

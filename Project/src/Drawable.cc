@@ -54,6 +54,7 @@ void Sphere::Update(GLfloat t) {
 
 	glUniformMatrix4fv(glGetUniformLocation(program, "WTVmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetWTV()));
 	glUniform1f(glGetUniformLocation(program, "currT"), t);
+	glUniform1f(glGetUniformLocation(program, "viewDistance"), *cam->ViewDistancePtr());
 
 	printError("Model Update");
 }
@@ -113,6 +114,7 @@ void Billboard::Update(GLfloat t) {
 	glUniform3f(glGetUniformLocation(program, "cameraPos"), cam->GetPos().x, cam->GetPos().y, cam->GetPos().z);
 	glUniformMatrix4fv(glGetUniformLocation(program, "WTVmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetWTV()));
 	glUniform1f(glGetUniformLocation(program, "currT"), t);
+	glUniform1f(glGetUniformLocation(program, "viewDistance"), *cam->ViewDistancePtr());
 
 	printError("Billboard Update");
 }
