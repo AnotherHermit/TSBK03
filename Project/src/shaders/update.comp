@@ -19,13 +19,12 @@ uniform float deltaT;
 void main() {
    
     uint currentParticle = gl_GlobalInvocationID.x;
-    float dT = deltaT * 0.001;
 
     vec3 pos = particles.data[currentParticle].position;
     vec3 vel = particles.data[currentParticle].velocity;
 
     // Position update
-	particles.data[currentParticle].position = pos + vel * dT;
+	particles.data[currentParticle].position = pos + vel * deltaT;
 
     // Velocity update
 	particles.data[currentParticle].velocity = 0.0001 * vec3(-pos.z, 0, pos.x);

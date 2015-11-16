@@ -27,7 +27,7 @@ vec3 hsv2rgb(vec3 c)
 
 void main()
 {
-	float colorChangeSpeed = 0.00005f;
+	float colorChangeSpeed = 0.05f;
 	float hue = fract(currT * colorChangeSpeed);
 	vec3 hsvColor = vec3(hue, 1.0f, 1.0f);
 	vec3 rgbColor = hsv2rgb(hsvColor);

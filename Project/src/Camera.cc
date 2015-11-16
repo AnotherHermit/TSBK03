@@ -1,35 +1,20 @@
-﻿#include "Camera.h"
+﻿///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
 
-#ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#include <SDL2/SDL.h>
-#else
-#ifdef  __linux__
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glx.h>
-#include <GL/glext.h>
-#include <SDL2/SDL.h>
-#else
-#include "glew.h"
-#include "Windows/sdl2/SDL.h"
-#endif
-#endif
-
-#include <iostream>
-
-#include "GL_utilities.h"
+#include "Camera.h"
 
 #include "gtc/matrix_transform.hpp"
-#include "gtx/transform.hpp"
-#include "gtx/rotate_vector.hpp"
 
 Camera::Camera(glm::vec3 startpos) {
 	isPaused = true;
 	p = startpos;
+	yvec = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	mspeed = 0.1f;
+	mspeed = 100.0f;
 	rspeed = 0.001f;
 	phi = M_PI;
 	theta = M_PI / 2.0f;
@@ -55,10 +40,11 @@ void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GL
 	// Add all normals and vectors before transformation
 	// Add order is left, right, bottom, top, far. The near plane check is skipped.
 	// All normals are pointing inwards towards the center of the frustum.
-	for (int i = 0; i < 4; i++)
-		nontransPoints.push_back(glm::vec4(0.0, 0.0, 0.0, 1.0));
-
-	nontransPoints.push_back(glm::vec4(0.0, 0.0, -in_far, 1.0));
+	nontransPoints[0] = glm::vec4(0.0, 0.0, 0.0, 1.0);
+	nontransPoints[1] = glm::vec4(0.0, 0.0, 0.0, 1.0);
+	nontransPoints[2] = glm::vec4(0.0, 0.0, 0.0, 1.0);
+	nontransPoints[3] = glm::vec4(0.0, 0.0, 0.0, 1.0);
+	nontransPoints[4] = glm::vec4(0.0, 0.0, -in_far, 1.0);
 
 	// The near corners of the frustum
 	glm::vec3 a = glm::vec3(in_left, in_top, -in_near);
@@ -66,11 +52,11 @@ void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GL
 	glm::vec3 c = glm::vec3(in_right, in_bottom, -in_near);
 	glm::vec3 d = glm::vec3(in_left, in_bottom, -in_near);
 
-	nontransNormals.push_back(glm::cross(a, b));
-	nontransNormals.push_back(glm::cross(b, c));
-	nontransNormals.push_back(glm::cross(c, d));
-	nontransNormals.push_back(glm::cross(d, a));
-	nontransNormals.push_back(glm::vec3(0.0, 0.0, 1.0));
+	nontransNormals[0] = glm::cross(a, b);
+	nontransNormals[1] = glm::cross(b, c);
+	nontransNormals[2] = glm::cross(c, d);
+	nontransNormals[3] = glm::cross(d, a);
+	nontransNormals[4] = glm::vec3(0.0, 0.0, 1.0);
 
 	UpdateCullingBox();
 }
@@ -92,15 +78,13 @@ void Camera::UpdateCullingBox() {
 }
 
 void Camera::Update() {
-	glm::vec3 yvec = glm::vec3(0.0f, 1.0f, 0.0f);
-
 	// Update directions
 	heading = glm::normalize(glm::vec3(-sin(theta)*sin(phi), cos(theta), sin(theta)*cos(phi)));
 	side = glm::normalize(glm::cross(heading, yvec));
 	up = glm::normalize(glm::cross(side, heading));
 
 	// Update camera matrix
-	glm::vec3 lookp = p + heading;
+	lookp = p + heading;
 	WTVmatrix = lookAt(p, lookp, yvec);
 }
 

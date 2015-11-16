@@ -1,28 +1,39 @@
+///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
 
 #ifndef PROGRAM_H
 #define PROGRAM_H
 
 #ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#include <SDL2/SDL.h>
+#	include <OpenGL/gl3.h>
+#	include <SDL2/SDL.h>
 #else
-#ifdef  __linux__
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glx.h>
-#include <GL/glext.h>
-#include <SDL2/SDL.h>
-#else
-#include "glew.h"
-#include "Windows/sdl2/SDL.h"
-#endif
+#	ifdef  __linux__
+#		define GL_GLEXT_PROTOTYPES
+#		include <GL/gl.h>
+#		include <GL/glu.h>
+#		include <GL/glx.h>
+#		include <GL/glext.h>
+#		include <SDL2/SDL.h>
+#	else
+#		include "glew.h"
+#		include "Windows/sdl2/SDL.h"
+#	endif
 #endif
 
 #include "Camera.h"
 #include "Particles.h"
+
 #include "AntTweakBar.h"
 
+#include <chrono>
+
+typedef std::chrono::high_resolution_clock Time;
+typedef std::chrono::duration<float> fsec;
 
 class Program {
 private:
@@ -33,6 +44,7 @@ private:
 
 	bool isRunning;
 
+	Time::time_point startTime;
 	GLfloat currentTime, deltaTime, FPS;
 
 	Particles *particleSystem;
@@ -58,6 +70,5 @@ public:
 
 	void Clean();
 };
-
 
 #endif // PROGRAM_H

@@ -9,12 +9,12 @@ struct Particle {
 	uint padding;
 };
 
-layout (std140, binding = 1) buffer ParticleBuffer
+layout (std140, binding = 1) readonly buffer ParticleBuffer
 {
     Particle data[];  
 } particles;
 
-layout(binding = 2) buffer CullBuffer {
+layout(binding = 2) writeonly buffer CullBuffer {
 	float data[];
 } cullPositions;
 
@@ -58,6 +58,7 @@ void main(void) {
 	new_point = pos + boxNormals[i] * radius;
 	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
 	keepPoint = keepPoint && (distance > 0);
+
 	// && bin == displaybin
 	if(keepPoint) {
 		outParticleNum = atomicCounterIncrement(particlesToRender);

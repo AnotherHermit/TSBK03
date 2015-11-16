@@ -1,5 +1,12 @@
-﻿#ifndef DRAWABLE
-#define DRAWABLE
+﻿///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
+
+#ifndef DRAWABLE_H
+#define DRAWABLE_H
 
 #include "Camera.h"
 
@@ -53,4 +60,4 @@ public:
 	virtual void Draw(GLuint num);
 };
 
-#endif
+#endif // DRAWABLE_H

@@ -1,31 +1,27 @@
 #ifndef __TGA_LOADER__
 #define __TGA_LOADER__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#include <SDL2/SDL.h>
+#	include <OpenGL/gl3.h>
+#	include <SDL2/SDL.h>
 #else
-#ifdef  __linux__
-#define GL_GLEXT_PROTOTYPES
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glx.h>
-#include <GL/glext.h>
-#include <SDL2/SDL.h>
-#else
-#include "glew.h"
-#include "Windows/sdl2/SDL.h"
-#endif
+#	ifdef  __linux__
+#		define GL_GLEXT_PROTOTYPES
+#		include <GL/gl.h>
+#		include <GL/glu.h>
+#		include <GL/glx.h>
+#		include <GL/glext.h>
+#		include <SDL2/SDL.h>
+#	else
+#		include "glew.h"
+#		include "Windows/sdl2/SDL.h"
+#	endif
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-	
+
 typedef struct TextureData		// Create A Structure for .tga loading.
 {
 	GLubyte	*imageData;			// Image Data (Up To 32 Bits)
@@ -42,10 +38,6 @@ bool LoadTGATexture(const char *filename, TextureData *texture);
 void LoadTGATextureSimple(const char *filename, GLuint *tex);
 void LoadTGASetMipmapping(bool active);
 bool LoadTGATextureData(const char *filename, TextureData *texture);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

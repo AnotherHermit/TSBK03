@@ -1,16 +1,14 @@
 ///////////////////////////////////////
 //
-//	Computer Graphics TSBK07
+//	Computer Graphics TSBK03
 //	Conrad Wahlén - conwa099
 //
 ///////////////////////////////////////
 
-// ==== Includes ==== \\
-
+// ==== Includes ====
 #include "Program.h"
 
-// ==== Main Program ==== \\
-
+// ==== Main Program ====
 int main(int argc, char *argv[])
 {
 	Program program;

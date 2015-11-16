@@ -1,11 +1,13 @@
-﻿#include "Particles.h"
+﻿///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
 
-#include "gtc/type_ptr.hpp"
-#include "gtx/transform.hpp"
+#include "Particles.h"
 
 #include "GL_utilities.h"
-
-#include <iostream>
 
 Particles::Particles(GLuint numParticles, GLfloat initRadius) {
 	setParticles = numParticles;
@@ -241,6 +243,8 @@ void Particles::DoCompute(GLfloat t) {
 	printError("Do Compute: Update");
 
 	// ========== Cull Particles =========
+	//computeDrawParticles = particles;
+	
 	glUseProgram(computeCull);
 	glUniform3fv(glGetUniformLocation(computeCull, "boxNormals"), 5, cam->GetCullingNormals());
 	glUniform3fv(glGetUniformLocation(computeCull, "boxPoints"), 5, cam->GetCullingPoints());
@@ -250,7 +254,7 @@ void Particles::DoCompute(GLfloat t) {
 	glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &computeDrawParticles);
 	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-
+	
 	printError("Do Compute: Culling");
 
 	// ========== Swap Buffers =========

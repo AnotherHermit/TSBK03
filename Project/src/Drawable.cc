@@ -1,15 +1,17 @@
-﻿#include "Drawable.h"
+﻿///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
 
-#include <iostream>
-
-
-#include "glm.hpp"
-#include "gtc/type_ptr.hpp"
-#include "gtx/transform.hpp"
+#include "Drawable.h"
 
 #include "LoadTGA.h"
 #include "GL_utilities.h"
 
+#include "glm.hpp"
+#include "gtx/transform.hpp"
 
 Sphere::Sphere(GLfloat radius)
 	: Drawable() {

@@ -9,12 +9,12 @@ struct Particle {
 	uint padding;
 };
 
-layout (std140, binding = 0) buffer ParticleBuffer1
+layout (std140, binding = 0) readonly buffer ParticleBuffer1
 {
     Particle data[];  
 } particlesIn;
 
-layout (std140, binding = 1) buffer ParticleBuffer2
+layout (std140, binding = 1) writeonly buffer ParticleBuffer2
 {
     Particle data[];  
 } particlesOut;
@@ -23,7 +23,7 @@ layout (binding = 3) buffer BinCounterBuffer {
 	uint data[];
 } binCounter;
 
-layout (binding = 4) buffer PrefixSumBuffer {
+layout (binding = 4) readonly buffer PrefixSumBuffer {
 	uint data[];
 } prefixSum;
 

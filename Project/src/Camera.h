@@ -1,7 +1,29 @@
-﻿#ifndef CAMERA
-#define CAMERA
+﻿///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
 
-#include "GL_utilities.h"
+#ifndef CAMERA_H
+#define CAMERA_H
+
+#ifdef __APPLE__
+#	include <OpenGL/gl3.h>
+#	include <SDL2/SDL.h>
+#else
+#	ifdef  __linux__
+#		define GL_GLEXT_PROTOTYPES
+#		include <GL/gl.h>
+#		include <GL/glu.h>
+#		include <GL/glx.h>
+#		include <GL/glext.h>
+#		include <SDL2/SDL.h>
+#	else
+#		include "glew.h"
+#		include "Windows/sdl2/SDL.h"
+#	endif
+#endif
 
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
@@ -10,13 +32,13 @@
 
 class Camera {
 private:
-	glm::vec3 p;
+	glm::vec3 p, lookp, yvec;
 	glm::vec3 heading, side, up;
 	GLfloat mspeed, rspeed, phi, theta;
 	bool isPaused;
 
-	std::vector<glm::vec4> nontransPoints;
-	std::vector<glm::vec3> nontransNormals;
+	glm::vec4 nontransPoints[5];
+	glm::vec3 nontransNormals[5];
 
 	GLfloat normals[15];
 	GLfloat points[15];
@@ -55,4 +77,4 @@ public:
 
 };
 
-#endif
+#endif // CAMERA_H

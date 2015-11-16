@@ -1,5 +1,12 @@
-﻿#ifndef PARTICLES
-#define PARTICLES
+﻿///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
+
+#ifndef PARTICLES_H
+#define PARTICLES_H
 
 #include "Camera.h"
 #include "Drawable.h"
@@ -71,4 +78,4 @@ public:
 	void SetParticles(GLuint newParticles, GLuint newType);
 };
 
-#endif
+#endif // PARTICLES_H
