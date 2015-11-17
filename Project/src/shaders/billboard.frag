@@ -1,11 +1,11 @@
 ///////////////////////////////////////
 //
-//	Computer Graphics TSBK07
-//	Conrad Wahlen - conwa099
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
 //
 ///////////////////////////////////////
 
-#version 150
+#version 430
 
 in vec4 outPosition;
 in vec2 texValue;
@@ -13,10 +13,31 @@ in vec3 exNormal;
 
 out vec4 outColor;
 
-uniform float currT;
+struct Camera {
+	mat4 WTVmatrix;
+	mat4 VTPmatrix;
+	vec4 normals[5];
+	vec4 points[5];
+	float viewDistance;
+	float padding73[3];
+};
+
+struct Program {
+	float currentT;
+	float deltaT;
+	float radius;
+	float simSpeed;
+};
+
+layout (std140, binding = 10) uniform CameraBuffer {
+	Camera cam;
+};
+
+layout (std140, binding = 12) uniform ProgramBuffer {
+	Program prog;
+};
+
 uniform sampler2D texUnit;
-uniform mat4 WTVmatrix;
-uniform float viewDistance;
 
 // Start From Stackoverflow
 vec3 hsv2rgb(vec3 c)
@@ -30,19 +51,19 @@ vec3 hsv2rgb(vec3 c)
 void main()
 {
 	float colorChangeSpeed = 0.05f;
-	float hue = fract(currT * colorChangeSpeed);
+	float hue = fract(prog.currentT * colorChangeSpeed);
 	vec3 hsvColor = vec3(hue, 1.0f, 1.0f);
 	vec3 rgbColor = hsv2rgb(hsvColor);
 
 	// Calculate light
-	vec3 light = mat3(WTVmatrix) * vec3(0, 1, 0);
+	vec3 light = mat3(cam.WTVmatrix) * vec3(0, 1, 0);
 	float shade = max(dot(normalize(exNormal), light), 0.1);
 	vec3 shadedColor = rgbColor * shade;
 
 	// Calculate fog
 	float dist = length(outPosition);
-	float minFogDist = viewDistance / 2;
-	float maxFogDist = viewDistance;
+	float minFogDist = cam.viewDistance / 2;
+	float maxFogDist = cam.viewDistance;
 	float fogFactor = clamp((dist - minFogDist)/(maxFogDist - minFogDist), 0.0f, 1.0f);
 	vec3 foggedColor = (1 - fogFactor) * shadedColor;
 

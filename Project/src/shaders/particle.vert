@@ -1,11 +1,11 @@
 ///////////////////////////////////////
 //
-//	Computer Graphics TSBK07
+//	Computer Graphics TSBK03
 //	Conrad Wahlén - conwa099
 //
 ///////////////////////////////////////
 
-#version 150
+#version 430
 
 in vec3 posValue;
 in vec3 inPosition;
@@ -16,19 +16,39 @@ out vec3 exNormal;
 out vec2 exTexCoord;
 out vec4 exPosition;
 
-uniform mat4 MTWmatrix;
-uniform mat4 WTVmatrix;
-uniform mat4 VTPmatrix;
+struct Camera {
+	mat4 WTVmatrix;
+	mat4 VTPmatrix;
+	vec4 normals[5];
+	vec4 points[5];
+	float viewDistance;
+	float padding73[3];
+};
+
+struct Program {
+	float currentT;
+	float deltaT;
+	float radius;
+	float simSpeed;
+};
+
+layout (std140, binding = 10) uniform CameraBuffer {
+	Camera cam;
+};
+
+layout (std140, binding = 12) uniform ProgramBuffer {
+	Program prog;
+};
 
 void main(void)
 {
-	exNormal = mat3(WTVmatrix * MTWmatrix) * inNormal;
+	exNormal = mat3(cam.WTVmatrix) * inNormal;
 
 	exTexCoord = inTexCoord;
 	
-	vec4 temp = WTVmatrix * (MTWmatrix * vec4(inPosition, 1.0f) + vec4(posValue, 0.0f));
+	vec4 temp = cam.WTVmatrix * vec4(inPosition * prog.radius + posValue, 1.0f);
 	
 	exPosition = temp;
 	
-	gl_Position = VTPmatrix * temp;
+	gl_Position = cam.VTPmatrix * temp;
 }

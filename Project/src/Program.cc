@@ -26,6 +26,7 @@ Program::Program() {
 
 	// Start state
 	isRunning = true;
+	renderModels = false;
 
 	// Time init
 	startTime = Time::now();
@@ -52,9 +53,9 @@ int Program::Execute() {
 
 void Program::timeUpdate() {
 	GLfloat t = fsec(Time::now() - startTime).count();
-	deltaTime = t - currentTime;
-	currentTime = t;
-	FPS = 1.0f / deltaTime;
+	param.deltaT = t - param.currentT;
+	param.currentT = t;
+	FPS = 1.0f / param.deltaT;
 }
 
 bool Program::Init() {
@@ -82,26 +83,52 @@ bool Program::Init() {
 
 	printError("after wrapper inits");
 
+	// Set program parameters
+	param.radius = 1.0f;
+	param.simulationSpeed = 30.0f;
+
+	glm::vec3 cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
+	GLfloat cameraViewDistance = 500.0f;
+
+	GLuint particlesPerSide = 16;
+	GLfloat binSize = 20.0f;
+
 	// Set up the camera
-	cam = new Camera(glm::vec3(-100.0, 100.0, -100.0));
-	cam->SetFrustum(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1500.0f);
+	cam = new Camera(cameraStartPos, &winWidth, &winHeight, cameraViewDistance);
 
 	printError("after camera init");
 
 	// Set up particle system
-	particleSystem = new Particles(64, 1.0f);
-	particleSystem->Init(cam);
+	particleSystem = new Particles(particlesPerSide, binSize);
+	particleSystem->Init();
 
 	printError("after particle system init");
+
+	// Set up different models to render
+	model = new Sphere();
+	model->Init(particleSystem->GetCullBuffer());
+
+	billboard = new Billboard();
+	billboard->Init(particleSystem->GetCullBuffer());
+
+	printError("after models init");
 	
+	glGenBuffers(1, &programBuffer);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 12, programBuffer);
+
+	glBindBuffer(GL_UNIFORM_BUFFER, programBuffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(ProgramStruct), &param, GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	printError("after setting program params");
+
 	// Set up the AntBar
 	TwInit(TW_OPENGL_CORE, NULL);
 	TwWindowSize(winWidth, winWidth);
 	antBar = TwNewBar("Particles");
 
 	TwDefine(" Particles refresh=0.1 ");
-	TwDefine(" Particles valueswidth=fit ");
-	TwDefine(" Particles size='230 250' ");
+	TwDefine(" Particles size='270 250' ");
 
 	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, "group=Info");
 	TwAddVarRO(antBar, "Total Particles", TW_TYPE_INT32, particleSystem->GetParticlesPtr(), "group=Info");
@@ -109,9 +136,8 @@ bool Program::Init() {
 
 	TwAddVarRW(antBar, "Camera Speed", TW_TYPE_FLOAT, cam->SpeedPtr(), " min=0 max=200 step=10 group=Controls ");
 	TwAddVarRW(antBar, "View Distance", TW_TYPE_FLOAT, cam->ViewDistancePtr(), " min=0 max=2000 step=100 group=Controls ");
-	TwAddVarRW(antBar, "Display Bin", TW_TYPE_UINT32, particleSystem->GetDisplayBinPtr(), " min=0 max=4095 step=1 group=Controls ");
+	TwAddVarRW(antBar, "Simulation speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls ");
 
-	TwAddVarRW(antBar, "Particle speed", TW_TYPE_FLOAT, particleSystem->GetSpeedPtr(), " min=0 max=200 step=5 group=Boid ");
 	TwAddVarRW(antBar, "Previous", TW_TYPE_FLOAT, particleSystem->GetPrePtr(), " min=0 max=1 step=0.01 group=Boid ");
 	TwAddVarRW(antBar, "Cohesion", TW_TYPE_FLOAT, particleSystem->GetCohPtr(), " min=0 max=1 step=0.01 group=Boid ");
 	TwAddVarRW(antBar, "Separation", TW_TYPE_FLOAT, particleSystem->GetSepPtr(), " min=0 max=1 step=0.01 group=Boid ");
@@ -175,9 +201,9 @@ void Program::OnKeypress(SDL_Event *Event) {
 		particleSystem->SetParticles(particleSystem->GetSetParticles());
 		break;
 	case SDLK_t:
-		particleSystem->ToggleDrawModels();
+		ToggleDrawModels();
 		break;
-	case SDLK_l:
+	case SDLK_f:
 		cam->TogglePause();
 		SDL_SetRelativeMouseMode(SDL_GetRelativeMouseMode() ? SDL_FALSE : SDL_TRUE);
 		break;
@@ -195,31 +221,36 @@ void Program::OnMouseMove(SDL_Event *Event) {
 void Program::CheckKeyDowns() {
 	const Uint8 *keystate = SDL_GetKeyboardState(NULL);
 	if (keystate[SDL_SCANCODE_W]) {
-		cam->MoveForward(deltaTime);
+		cam->MoveForward(param.deltaT);
 	}
 	if (keystate[SDL_SCANCODE_S]) {
-		cam->MoveForward(-deltaTime);
+		cam->MoveForward(-param.deltaT);
 	}
 	if (keystate[SDL_SCANCODE_A]) {
-		cam->MoveRight(-deltaTime);
+		cam->MoveRight(-param.deltaT);
 	}
 	if (keystate[SDL_SCANCODE_D]) {
-		cam->MoveRight(deltaTime);
+		cam->MoveRight(param.deltaT);
 	}
 	if (keystate[SDL_SCANCODE_Q]) {
-		cam->MoveUp(deltaTime);
+		cam->MoveUp(param.deltaT);
 	}
 	if (keystate[SDL_SCANCODE_E]) {
-		cam->MoveUp(-deltaTime);
+		cam->MoveUp(-param.deltaT);
 	}
 }
 
 void Program::Update() {
+	// Update program parameters
+	glBindBuffer(GL_UNIFORM_BUFFER, programBuffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, NULL, sizeof(ProgramStruct), &param);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 	// Update the camera
 	cam->UpdateCamera();
 
 	// Update the particles
-	particleSystem->DoCompute(currentTime, deltaTime);
+	particleSystem->DoCompute();
 
 	printError("after update");
 }
@@ -229,7 +260,11 @@ void Program::Render() {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-	particleSystem->Draw();
+	if (renderModels) {
+		model->Draw(particleSystem->GetDrawParticles());
+	} else {
+		billboard->Draw(particleSystem->GetDrawParticles());
+	}
 
 	TwDraw();
 

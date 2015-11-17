@@ -20,8 +20,7 @@ class Drawable {
 public:
 	Drawable() {}
 	
-	virtual bool Init(Camera* cam, GLuint buffer) = 0;
-	virtual void Update(GLfloat t) = 0;
+	virtual bool Init(GLuint buffer) = 0;
 	virtual void Draw(GLuint num) = 0;
 };
 
@@ -31,15 +30,11 @@ class Sphere : public Drawable {
 private:
 	GLuint program, cullBuffer;
 	Model* model;
-	glm::mat4 MTWmatrix;
-
-	Camera* cam;
 
 public:
-	Sphere(GLfloat radius);
+	Sphere();
 
-	virtual bool Init(Camera* cam, GLuint buffer);
-	virtual void Update(GLfloat t);
+	virtual bool Init(GLuint buffer);
 	virtual void Draw(GLuint num);
 };
 
@@ -48,15 +43,11 @@ public:
 class Billboard : public Drawable {
 private:
 	GLuint program, texID, vao, cullBuffer;
-	GLfloat radius;
-
-	Camera* cam;
 
 public:
-	Billboard(GLfloat startRadius);
+	Billboard();
 
-	virtual bool Init(Camera* cam, GLuint buffer);
-	virtual void Update(GLfloat t);
+	virtual bool Init(GLuint buffer);
 	virtual void Draw(GLuint num);
 };
 

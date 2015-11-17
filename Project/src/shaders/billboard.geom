@@ -1,11 +1,11 @@
 ///////////////////////////////////////
 //
-//	Computer Graphics TSBK07
+//	Computer Graphics TSBK03
 //	Conrad Wahlén - conwa099
 //
 ///////////////////////////////////////
 
-#version 150 
+#version 430 
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
@@ -14,8 +14,30 @@ out vec2 texValue;
 out vec3 exNormal;
 out vec4 outPosition;
 
-uniform mat4 VTPmatrix;
-uniform float radius;
+struct Camera {
+	mat4 WTVmatrix;
+	mat4 VTPmatrix;
+	vec4 normals[5];
+	vec4 points[5];
+	float viewDistance;
+	float padding73[3];
+};
+
+struct Program {
+	float currentT;
+	float deltaT;
+	float radius;
+	float simSpeed;
+};
+
+layout (std140, binding = 10) uniform CameraBuffer {
+	Camera cam;
+};
+
+layout (std140, binding = 12) uniform ProgramBuffer {
+	Program prog;
+};
+
 
 void main()
 {
@@ -27,36 +49,36 @@ void main()
 	vec4 tempPos;
 	
 	// Create the bottom left corner
-	toEmit += radius * (left - top);
+	toEmit += prog.radius * (left - top);
 	tempPos = vec4(toEmit, 1.0f);
-	gl_Position = VTPmatrix * tempPos;
+	gl_Position = cam.VTPmatrix * tempPos;
 	outPosition = tempPos;
 	texValue = vec2(0.0f, 0.0f);
 	exNormal = toView - top + left;
 	EmitVertex();
 	
 	// Create the bottom right corner
-	toEmit -= 2 * radius * left;
+	toEmit -= 2 * prog.radius * left;
 	tempPos = vec4(toEmit, 1.0f);
-	gl_Position = VTPmatrix * tempPos;
+	gl_Position = cam.VTPmatrix * tempPos;
 	outPosition = tempPos;
 	texValue = vec2(1.0f, 0.0f);
 	exNormal = toView - top - left;
 	EmitVertex();
 	
 	// Create the top left corner
-	toEmit += 2 * radius * (top + left);
+	toEmit += 2 * prog.radius * (top + left);
 	tempPos = vec4(toEmit, 1.0f);
-	gl_Position = VTPmatrix * tempPos;
+	gl_Position = cam.VTPmatrix * tempPos;
 	outPosition = tempPos;
 	texValue = vec2(0.0f, 1.0f);
 	exNormal = toView + top + left;
 	EmitVertex();
 		
 	// Create the top right corner
-	toEmit -= 2 * radius * left;
+	toEmit -= 2 * prog.radius * left;
 	tempPos = vec4(toEmit, 1.0f);
-	gl_Position = VTPmatrix * tempPos;
+	gl_Position = cam.VTPmatrix * tempPos;
 	outPosition = tempPos;
 	texValue = vec2(1.0f, 1.0f);
 	exNormal = toView + top - left;

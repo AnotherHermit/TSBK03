@@ -30,27 +30,39 @@
 
 #include <vector>
 
+struct CameraParam {
+	glm::mat4 WTVmatrix;
+	glm::mat4 VTPmatrix;
+	glm::vec4 normals[5];
+	glm::vec4 points[5];
+	GLfloat viewDistance;
+	GLfloat padding73[3];
+};
+
+
 class Camera {
 private:
 	glm::vec3 p, lookp, yvec;
 	glm::vec3 heading, side, up;
-	GLfloat mspeed, rspeed, phi, theta, viewDistance;
-	bool isPaused;
+	GLfloat mspeed, rspeed, phi, theta;
 
 	glm::vec4 nontransPoints[5];
 	glm::vec3 nontransNormals[5];
 
-	GLfloat normals[15];
-	GLfloat points[15];
+	bool isPaused;
 
-	glm::mat4 WTVmatrix, VTPmatrix;
+	GLuint cameraBuffer;
+	GLuint *winWidth, *winHeight;
+
+	CameraParam param;
 
 	void UpdateCullingBox();
 	void Update();
+	void UploadParams();
 
 public:
-	Camera(glm::vec3 startpos);
-	void SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GLfloat in_top, GLfloat in_near, GLfloat in_far);
+	Camera(glm::vec3 startpos, GLuint *screenWidth, GLuint *screenHeight, GLfloat viewDistance);
+	void SetFrustum(GLuint screenWidth, GLuint screenHeight, GLfloat viewDistance);
 	void ResetCamera(glm::vec3 pos);
 
 	void MoveForward(GLfloat deltaT);
@@ -62,17 +74,12 @@ public:
 
 	void TogglePause() { isPaused = !isPaused; }
 
-	const GLfloat* GetCullingNormals() { return normals; }
-	const GLfloat* GetCullingPoints() { return points; }
-
-	const glm::mat4 GetVTP() { return VTPmatrix; }
-	const glm::mat4 GetWTV() { return WTVmatrix; }
 	const glm::vec3 GetPos() { return p; }
 	const glm::vec3 GetHeading() { return heading; }
 	const glm::vec3 GetSide() { return side; }
 	const glm::vec3 GetUp() { return up; }
 
-	GLfloat* ViewDistancePtr() { return &viewDistance; }
+	GLfloat* ViewDistancePtr() { return &param.viewDistance; }
 	GLfloat* SpeedPtr() { return &mspeed; }
 	GLfloat* HeadingPtr() { return glm::value_ptr(heading); }
 

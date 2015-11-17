@@ -1,3 +1,10 @@
+///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
+
 #version 430
 
 layout(local_size_x = 64) in;
@@ -11,30 +18,30 @@ struct Particle {
 
 layout (std140, binding = 0) readonly buffer ParticleBuffer1
 {
-    Particle data[];  
-} particlesIn;
+    Particle particlesIn[];  
+};
 
 layout (std140, binding = 1) writeonly buffer ParticleBuffer2
 {
-    Particle data[];  
-} particlesOut;
+    Particle particlesOut[];  
+};
 
 layout (binding = 3) buffer BinCounterBuffer {
-	uint data[];
-} binCounter;
+	uint binCounter[];
+};
 
 layout (binding = 4) readonly buffer PrefixSumBuffer {
-	uint data[];
-} prefixSum;
+	uint prefixSum[];
+};
 
 void main() {
     uint currentParticle = gl_GlobalInvocationID.x;
-	uint bin = particlesIn.data[currentParticle].bin;
-	uint count = atomicAdd(binCounter.data[bin], 1);
-	uint outIndex = prefixSum.data[bin] + count;
+	uint bin = particlesIn[currentParticle].bin;
+	uint count = atomicAdd(binCounter[bin], 1);
+	uint outIndex = prefixSum[bin] + count;
 
-	particlesOut.data[outIndex].position = particlesIn.data[currentParticle].position;
-	particlesOut.data[outIndex].bin = bin;
-	particlesOut.data[outIndex].velocity = particlesIn.data[currentParticle].velocity;
-	particlesOut.data[outIndex].ID = particlesIn.data[currentParticle].ID;
+	particlesOut[outIndex].position = particlesIn[currentParticle].position;
+	particlesOut[outIndex].bin = bin;
+	particlesOut[outIndex].velocity = particlesIn[currentParticle].velocity;
+	particlesOut[outIndex].ID = particlesIn[currentParticle].ID;
 }

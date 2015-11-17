@@ -9,7 +9,9 @@
 
 #include "gtc/matrix_transform.hpp"
 
-Camera::Camera(glm::vec3 startpos) {
+#include <iostream>
+
+Camera::Camera(glm::vec3 startpos, GLuint* screenWidth, GLuint* screenHeight, GLfloat viewDistance) {
 	isPaused = true;
 	p = startpos;
 	yvec = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -19,8 +21,19 @@ Camera::Camera(glm::vec3 startpos) {
 	phi = 7 * M_PI / 4;
 	theta = M_PI / 2.0f;
 
+	winWidth = screenWidth;
+	winHeight = screenHeight;
+
 	// Set starting WTVmatrix
 	Update();
+	SetFrustum(*winWidth, *winHeight, viewDistance);
+	UpdateCullingBox();
+
+	glGenBuffers(1, &cameraBuffer);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 10, cameraBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, cameraBuffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraParam), &param, GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void Camera::ResetCamera(glm::vec3 pos) {
@@ -28,15 +41,12 @@ void Camera::ResetCamera(glm::vec3 pos) {
 
 	phi = M_PI;
 	theta = M_PI / 2.0f;
-
-	// Set starting worldView matrix
-	Update();
-	UpdateCullingBox();
 }
 
-void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GLfloat in_top, GLfloat in_near, GLfloat in_far) {
-	viewDistance = in_far;
-	VTPmatrix = glm::frustum(in_left, in_right, in_bottom, in_top, in_near, in_far);
+void Camera::SetFrustum(GLuint screenWidth, GLuint screenHeight, GLfloat viewDistance) {
+	GLfloat ratio = (GLfloat)screenWidth / (GLfloat)screenHeight;
+	param.viewDistance = viewDistance;
+	param.VTPmatrix = glm::frustum(-ratio, ratio, -1.0f, 1.0f, 1.0f, viewDistance);
 
 	// Add all normals and vectors before transformation
 	// Add order is left, right, bottom, top, far. The near plane check is skipped.
@@ -45,36 +55,29 @@ void Camera::SetFrustum(GLfloat in_left, GLfloat in_right, GLfloat in_bottom, GL
 	nontransPoints[1] = glm::vec4(0.0, 0.0, 0.0, 1.0);
 	nontransPoints[2] = glm::vec4(0.0, 0.0, 0.0, 1.0);
 	nontransPoints[3] = glm::vec4(0.0, 0.0, 0.0, 1.0);
-	nontransPoints[4] = glm::vec4(0.0, 0.0, -in_far, 1.0);
+	nontransPoints[4] = glm::vec4(0.0, 0.0, -viewDistance, 1.0);
 
 	// The near corners of the frustum
-	glm::vec3 a = glm::vec3(in_left, in_top, -in_near);
-	glm::vec3 b = glm::vec3(in_right, in_top, -in_near);
-	glm::vec3 c = glm::vec3(in_right, in_bottom, -in_near);
-	glm::vec3 d = glm::vec3(in_left, in_bottom, -in_near);
+	glm::vec3 a = glm::vec3(-ratio, 1.0f, -1.0f);	// Left, top, near
+	glm::vec3 b = glm::vec3(ratio, 1.0f, -1.0f);	// Right, top, near
+	glm::vec3 c = glm::vec3(ratio, -1.0f, -1.0f);	// Right, bottom, near
+	glm::vec3 d = glm::vec3(-ratio, -1.0f, -1.0f);	// Left, bottom, near
 
 	nontransNormals[0] = glm::cross(a, b);
 	nontransNormals[1] = glm::cross(b, c);
 	nontransNormals[2] = glm::cross(c, d);
 	nontransNormals[3] = glm::cross(d, a);
 	nontransNormals[4] = glm::vec3(0.0, 0.0, 1.0);
-
-	UpdateCullingBox();
 }
 
 void Camera::UpdateCullingBox() {
 	for (int i = 0; i < 5; i++) {
-		glm::mat4 WTVInv = glm::inverse(WTVmatrix);
+		glm::mat4 WTVInv = glm::inverse(param.WTVmatrix);
 		glm::vec3 transNormals = glm::normalize(glm::mat3(WTVInv) * nontransNormals[i]);
 		glm::vec4 transPoints = WTVInv * nontransPoints[i];
 
-		normals[3 * i] = transNormals.x;
-		normals[3 * i + 1] = transNormals.y;
-		normals[3 * i + 2] = transNormals.z;
-
-		points[3 * i] = transPoints.x;
-		points[3 * i + 1] = transPoints.y;
-		points[3 * i + 2] = transPoints.z;
+		param.normals[i] = glm::vec4(transNormals, 1.0f);
+		param.points[i] = transPoints;
 	}
 }
 
@@ -86,12 +89,21 @@ void Camera::Update() {
 
 	// Update camera matrix
 	lookp = p + heading;
-	WTVmatrix = lookAt(p, lookp, yvec);
+	param.WTVmatrix = lookAt(p, lookp, yvec);
+}
+
+void Camera::UploadParams() {
+	glBindBuffer(GL_UNIFORM_BUFFER, cameraBuffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, NULL, sizeof(CameraParam), &param);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void Camera::UpdateCamera() {
 	Update();
+	if (param.viewDistance != -nontransPoints[4].z)
+		SetFrustum(*winWidth, *winHeight, param.viewDistance);
 	UpdateCullingBox();
+	UploadParams();
 }
 
 void Camera::MoveForward(GLfloat deltaT) {

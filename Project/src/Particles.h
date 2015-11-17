@@ -22,31 +22,32 @@ struct ParticleStruct {
 	GLuint ID;
 };
 
+struct BinStruct {
+	GLuint bins;
+	GLuint totalBins;
+	GLfloat binSize;
+	GLfloat areaSize;
+};
+
+
 class Particles {
 private:
 	// Particle info
 	GLfloat radius;
 	GLuint startMode;
-	GLuint particles, drawParticles, setParticles;
+	GLuint particles, setParticles;
 	std::vector<ParticleStruct> particleData;
 
 	// Boid parameters
-	GLfloat coh, sep, ali, pre, speed;
+	GLfloat coh, sep, ali, pre;
 
 	// Bin info
-	GLuint bins, numBins;
+	BinStruct binParam;
+	GLuint binBuffer;
 	GLuint *prefixArrayIn, *prefixArrayOut;
-	GLuint displaybin;
-	GLfloat binSize;
-
-	// Drawing stuff
-	Camera* cam;
-	Drawable *model, *billboard;
 
 	// Others
-	GLfloat oldT, currT;
 	bool doUpdate;
-	bool renderModels;
 
 	// Methods
 	void SetParticleData();
@@ -62,25 +63,22 @@ private:
 public:
 	Particles(GLuint numParticles, GLfloat initRadius);
 
-	bool Init(Camera* setCam);
-	void DoCompute(GLfloat t, GLfloat deltaT);
-	void Draw();
+	bool Init();
+	void DoCompute();
 
-	void ToggleDrawModels() { renderModels = !renderModels; }
 	void ToggleUpdate() { doUpdate = !doUpdate; }
 
 	GLuint *GetParticlesPtr() { return &particles; }
 	GLuint *GetDrawParticlesPtr() { return &computeDrawParticles; }
-	GLuint *GetDisplayBinPtr() { return &displaybin; }
 	GLfloat *GetCohPtr() { return &coh; }
 	GLfloat *GetSepPtr() { return &sep; }
 	GLfloat *GetAliPtr() { return &ali; }
 	GLfloat *GetPrePtr() { return &pre; }
-	GLfloat *GetSpeedPtr() { return &speed; }
 
 	const GLint GetParticles() { return particles; }
-	const GLint GetDrawParticles() { return drawParticles; }
+	const GLint GetDrawParticles() { return computeDrawParticles; }
 	const GLint GetSetParticles() { return setParticles; }
+	const GLuint GetCullBuffer() { return particleBuffers[2]; }
 
 	void SetParticles(GLuint newParticles);
 	void SetParticles(GLuint newParticles, GLuint newType);

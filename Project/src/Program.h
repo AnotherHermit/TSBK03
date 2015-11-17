@@ -35,21 +35,35 @@
 typedef std::chrono::high_resolution_clock Time;
 typedef std::chrono::duration<float> fsec;
 
+struct ProgramStruct {
+	GLfloat currentT;
+	GLfloat deltaT;
+	GLfloat radius;
+	GLfloat simulationSpeed;
+};
+
 class Program {
 private:
 	SDL_Window *screen;
 	SDL_GLContext glcontext;
-	int winWidth;
-	int winHeight;
+	GLuint winWidth, winHeight;
 
 	bool isRunning;
+	bool renderModels;
 
 	Time::time_point startTime;
-	GLfloat currentTime, deltaTime, FPS;
+	GLfloat FPS;
+	ProgramStruct param;
+	GLuint programBuffer;
 
 	Particles *particleSystem;
 	Camera *cam;
 	TwBar *antBar;
+
+	// Drawing stuff
+	Drawable *model, *billboard;
+
+	void ToggleDrawModels() { renderModels = !renderModels; }
 
 public:
 	Program();

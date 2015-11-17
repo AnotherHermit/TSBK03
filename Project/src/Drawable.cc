@@ -13,15 +13,13 @@
 #include "glm.hpp"
 #include "gtx/transform.hpp"
 
-Sphere::Sphere(GLfloat radius)
+Sphere::Sphere()
 	: Drawable() {
 	program = -1;
 	model = nullptr;
-	MTWmatrix = glm::scale(glm::vec3(radius));
 }
 
-bool Sphere::Init(Camera* setCam, GLuint buffer) {
-	cam = setCam;
+bool Sphere::Init(GLuint buffer) {
 	cullBuffer = buffer;
 
 	program = loadShaders("src/shaders/particle.vert", "src/shaders/particle.frag");
@@ -30,9 +28,6 @@ bool Sphere::Init(Camera* setCam, GLuint buffer) {
 	model = LoadModel("resources/groundsphere.obj");
 	NormalizeModel(model);
 	BuildModelVAO2(model, program, "inPosition", "inNormal", "inTexCoord");
-
-	glUniformMatrix4fv(glGetUniformLocation(program, "MTWmatrix"), 1, GL_FALSE, glm::value_ptr(MTWmatrix));
-	glUniformMatrix4fv(glGetUniformLocation(program, "VTPmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetVTP()));
 
 	glBindBuffer(GL_ARRAY_BUFFER, cullBuffer);
 	glBindVertexArray(model->vao);
@@ -49,16 +44,6 @@ bool Sphere::Init(Camera* setCam, GLuint buffer) {
 	return true;
 }
 
-void Sphere::Update(GLfloat t) {
-	glUseProgram(program);
-
-	glUniformMatrix4fv(glGetUniformLocation(program, "WTVmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetWTV()));
-	glUniform1f(glGetUniformLocation(program, "currT"), t);
-	glUniform1f(glGetUniformLocation(program, "viewDistance"), *cam->ViewDistancePtr());
-
-	printError("Model Update");
-}
-
 void Sphere::Draw(GLuint num) {
 	glUseProgram(program);
 
@@ -69,16 +54,14 @@ void Sphere::Draw(GLuint num) {
 	printError("Draw Spheres");
 }
 
-Billboard::Billboard(GLfloat startRadius) {
+Billboard::Billboard() {
 	program = -1;
 	texID = -1;
 	vao = -1;
 	cullBuffer = -1;
-	radius = startRadius;
 }
 
-bool Billboard::Init(Camera* setCam, GLuint buffer) {
-	cam = setCam;
+bool Billboard::Init(GLuint buffer) {
 	cullBuffer = buffer;
 
 	program = loadShadersG("src/shaders/billboard.vert", "src/shaders/billboard.frag", "src/shaders/billboard.geom");
@@ -87,11 +70,9 @@ bool Billboard::Init(Camera* setCam, GLuint buffer) {
 	glGenVertexArrays(1, &vao);
 	glGenTextures(1, &texID);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+	glBindTexture(GL_TEXTURE_2D, texID);
 	LoadTGATextureSimple("resources/particle.tga", &texID);
-	
-	glUniformMatrix4fv(glGetUniformLocation(program, "VTPmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetVTP()));
-	glUniform1f(glGetUniformLocation(program, "radius"), radius);
+
 	glUniform1i(glGetUniformLocation(program, "texUnit"), 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, cullBuffer);
@@ -106,17 +87,6 @@ bool Billboard::Init(Camera* setCam, GLuint buffer) {
 
 	printError("Init Billboard");
 	return true;
-}
-
-void Billboard::Update(GLfloat t) {
-	glUseProgram(program);
-
-	glUniform3f(glGetUniformLocation(program, "cameraPos"), cam->GetPos().x, cam->GetPos().y, cam->GetPos().z);
-	glUniformMatrix4fv(glGetUniformLocation(program, "WTVmatrix"), 1, GL_FALSE, glm::value_ptr(cam->GetWTV()));
-	glUniform1f(glGetUniformLocation(program, "currT"), t);
-	glUniform1f(glGetUniformLocation(program, "viewDistance"), *cam->ViewDistancePtr());
-
-	printError("Billboard Update");
 }
 
 void Billboard::Draw(GLuint num) {

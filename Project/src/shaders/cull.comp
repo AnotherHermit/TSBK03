@@ -1,3 +1,10 @@
+///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
+
 #version 430
 
 layout(local_size_x = 64) in;
@@ -9,61 +16,79 @@ struct Particle {
 	uint ID;
 };
 
+struct Camera {
+	mat4 WTVmatrix;
+	mat4 VTPmatrix;
+	vec4 normals[5];
+	vec4 points[5];
+	float viewDistance;
+	float padding73[3];
+};
+
+struct Program {
+	float currentT;
+	float deltaT;
+	float radius;
+	float simSpeed;
+};
+
 layout (std140, binding = 0) readonly buffer ParticleBuffer
 {
-    Particle data[];  
-} particles;
+    Particle particles[];  
+} ;
 
 layout(binding = 2) writeonly buffer CullBuffer {
-	float data[];
-} cullPositions;
+	float cullPositions[];
+};
+
+layout (std140, binding = 10) uniform CameraBuffer {
+	Camera cam;
+};
+
+layout (std140, binding = 12) uniform ProgramBuffer {
+	Program prog;
+};
 
 // Atomic counter of rendered particles;
 layout(binding = 0) uniform atomic_uint particlesToRender;
-
-uniform float radius;
-uniform uint displaybin;
-uniform vec3 boxNormals[5];
-uniform vec3 boxPoints[5];
 
 void main(void) {
 	uint currentParticle = gl_GlobalInvocationID.x;
 	uint outParticleNum = 0;
 
-	vec3 pos = particles.data[currentParticle].position;
-	uint bin = particles.data[currentParticle].bin;
+	vec3 pos = particles[currentParticle].position;
+	uint bin = particles[currentParticle].bin;
 	int i = 0;
 	bool keepPoint = true;
 
-	vec3 new_point = pos + boxNormals[i] * radius;
-	float distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	vec3 new_point = pos + cam.normals[i].xyz * prog.radius;
+	float distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = (distance > 0);
 	i++;
 	
-	new_point = pos + boxNormals[i] * radius;
-	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	new_point = pos + cam.normals[i].xyz * prog.radius;
+	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = keepPoint && (distance > 0);
 	i++;
 
-	new_point = pos + boxNormals[i] * radius;
-	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	new_point = pos + cam.normals[i].xyz * prog.radius;
+	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = keepPoint && (distance > 0);
 	i++;
 
-	new_point = pos + boxNormals[i] * radius;
-	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	new_point = pos + cam.normals[i].xyz * prog.radius;
+	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = keepPoint && (distance > 0);
 	i++;
 
-	new_point = pos + boxNormals[i] * radius;
-	distance = dot(new_point, boxNormals[i]) - dot(boxPoints[i], boxNormals[i]);
+	new_point = pos + cam.normals[i].xyz * prog.radius;
+	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = keepPoint && (distance > 0);
-
-	// && bin == displaybin
+	
 	if(keepPoint) {
 		outParticleNum = atomicCounterIncrement(particlesToRender);
-		cullPositions.data[outParticleNum * 3] = pos.x;
-		cullPositions.data[outParticleNum * 3 + 1] = pos.y;
-		cullPositions.data[outParticleNum * 3 + 2] = pos.z;
+		cullPositions[outParticleNum * 3] = pos.x;
+		cullPositions[outParticleNum * 3 + 1] = pos.y;
+		cullPositions[outParticleNum * 3 + 2] = pos.z;
 	}
 }
