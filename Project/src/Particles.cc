@@ -70,6 +70,12 @@ void Particles::SetParticles(GLuint newParticles, GLuint newType) {
 
 	binParam.bins = setParticles;
 	binParam.totalBins = binParam.bins*binParam.bins*binParam.bins;
+	binParam.areaSize = (GLfloat)binParam.bins * binParam.binSize;
+
+	free(prefixArrayIn);
+	free(prefixArrayOut);
+	prefixArrayIn = (GLuint*)malloc(sizeof(GLuint) * binParam.totalBins);
+	prefixArrayOut = (GLuint*)malloc(sizeof(GLuint) * binParam.totalBins);
 
 	SetParticleData();
 	InitCompute();
@@ -188,6 +194,8 @@ void Particles::InitCompute() {
 	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 3, 2, binBuffers);
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, counterBuffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 11, binBuffer);
+
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
 
 	// Set unchanging uniforms
 	glUseProgram(computeCull);

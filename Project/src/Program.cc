@@ -90,7 +90,7 @@ bool Program::Init() {
 	glm::vec3 cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
 	GLfloat cameraViewDistance = 500.0f;
 
-	GLuint particlesPerSide = 16;
+	GLuint particlesPerSide = 32;
 	GLfloat binSize = 20.0f;
 
 	// Set up the camera
