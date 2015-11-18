@@ -153,6 +153,16 @@ void Program::OnEvent(SDL_Event *Event) {
 	case SDL_QUIT:
 		isRunning = false;
 		break;
+	case SDL_WINDOWEVENT:
+		switch (Event->window.event) {
+		case SDL_WINDOWEVENT_RESIZED:
+			SDL_SetWindowSize(screen, Event->window.data1, Event->window.data2);
+			SDL_GetWindowSize(screen, &winWidth, &winHeight);
+			glViewport(0, 0, winWidth, winHeight);
+			TwWindowSize(winWidth, winHeight);
+			cam->SetFrustum();
+			break;
+		}
 	case SDL_KEYDOWN:
 		OnKeypress(Event);
 		break;
@@ -180,10 +190,10 @@ void Program::OnKeypress(SDL_Event *Event) {
 		particleSystem->ToggleUpdate();
 		break;
 	case SDLK_1:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() / 2);
+		particleSystem->SetParticles(particleSystem->GetSetParticles() - 4);
 		break;
 	case SDLK_2:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() * 2);
+		particleSystem->SetParticles(particleSystem->GetSetParticles() + 4);
 		break;
 	case SDLK_3:
 		particleSystem->SetParticles(particleSystem->GetSetParticles(), 0);
@@ -207,6 +217,14 @@ void Program::OnKeypress(SDL_Event *Event) {
 		cam->TogglePause();
 		SDL_SetRelativeMouseMode(SDL_GetRelativeMouseMode() ? SDL_FALSE : SDL_TRUE);
 		break;
+	case SDLK_g:
+		int isBarHidden;
+		TwGetParam(antBar, NULL, "iconified", TW_PARAM_INT32, 1, &isBarHidden);
+		if (isBarHidden) {
+			TwDefine(" Particles iconified=false ");
+		} else {
+			TwDefine(" Particles iconified=true ");
+		}
 	default:
 		break;
 	}

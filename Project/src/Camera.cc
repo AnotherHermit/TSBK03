@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-Camera::Camera(glm::vec3 startpos, GLuint* screenWidth, GLuint* screenHeight, GLfloat viewDistance) {
+Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, GLfloat viewDistance) {
 	isPaused = true;
 	p = startpos;
 	yvec = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -23,10 +23,11 @@ Camera::Camera(glm::vec3 startpos, GLuint* screenWidth, GLuint* screenHeight, GL
 
 	winWidth = screenWidth;
 	winHeight = screenHeight;
+	param.viewDistance = viewDistance;
 
 	// Set starting WTVmatrix
 	Update();
-	SetFrustum(*winWidth, *winHeight, viewDistance);
+	SetFrustum();
 	UpdateCullingBox();
 
 	glGenBuffers(1, &cameraBuffer);
@@ -43,10 +44,12 @@ void Camera::ResetCamera(glm::vec3 pos) {
 	theta = M_PI / 2.0f;
 }
 
-void Camera::SetFrustum(GLuint screenWidth, GLuint screenHeight, GLfloat viewDistance) {
-	GLfloat ratio = (GLfloat)screenWidth / (GLfloat)screenHeight;
-	param.viewDistance = viewDistance;
-	param.VTPmatrix = glm::frustum(-ratio, ratio, -1.0f, 1.0f, 1.0f, viewDistance);
+void Camera::SetFrustum() {
+	GLfloat ratio = (GLfloat)*winWidth / (GLfloat)*winHeight;
+	GLfloat width = (ratio > 1.0f) ? 1.0f : ratio;
+	GLfloat height = (ratio > 1.0f) ? 1.0f / ratio : 1.0f;
+
+	param.VTPmatrix = glm::frustum(-width, width, -height, height, 1.0f, param.viewDistance);
 
 	// Add all normals and vectors before transformation
 	// Add order is left, right, bottom, top, far. The near plane check is skipped.
@@ -55,13 +58,13 @@ void Camera::SetFrustum(GLuint screenWidth, GLuint screenHeight, GLfloat viewDis
 	nontransPoints[1] = glm::vec4(0.0, 0.0, 0.0, 1.0);
 	nontransPoints[2] = glm::vec4(0.0, 0.0, 0.0, 1.0);
 	nontransPoints[3] = glm::vec4(0.0, 0.0, 0.0, 1.0);
-	nontransPoints[4] = glm::vec4(0.0, 0.0, -viewDistance, 1.0);
+	nontransPoints[4] = glm::vec4(0.0, 0.0, -param.viewDistance, 1.0);
 
 	// The near corners of the frustum
-	glm::vec3 a = glm::vec3(-ratio, 1.0f, -1.0f);	// Left, top, near
-	glm::vec3 b = glm::vec3(ratio, 1.0f, -1.0f);	// Right, top, near
-	glm::vec3 c = glm::vec3(ratio, -1.0f, -1.0f);	// Right, bottom, near
-	glm::vec3 d = glm::vec3(-ratio, -1.0f, -1.0f);	// Left, bottom, near
+	glm::vec3 a = glm::vec3(-width, height, -1.0f);	// Left, top, near
+	glm::vec3 b = glm::vec3(width, height, -1.0f);	// Right, top, near
+	glm::vec3 c = glm::vec3(width, -height, -1.0f);	// Right, bottom, near
+	glm::vec3 d = glm::vec3(-width, -height, -1.0f);	// Left, bottom, near
 
 	nontransNormals[0] = glm::cross(a, b);
 	nontransNormals[1] = glm::cross(b, c);
@@ -101,7 +104,7 @@ void Camera::UploadParams() {
 void Camera::UpdateCamera() {
 	Update();
 	if (param.viewDistance != -nontransPoints[4].z)
-		SetFrustum(*winWidth, *winHeight, param.viewDistance);
+		SetFrustum();
 	UpdateCullingBox();
 	UploadParams();
 }

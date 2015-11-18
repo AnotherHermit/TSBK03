@@ -68,6 +68,9 @@ void Particles::SetParticles(GLuint newParticles, GLuint newType) {
 	particles = setParticles*setParticles*setParticles;
 	startMode = newType;
 
+	inBufferIndex = 0;
+	outBufferIndex = 1;
+
 	binParam.bins = setParticles;
 	binParam.totalBins = binParam.bins*binParam.bins*binParam.bins;
 	binParam.areaSize = (GLfloat)binParam.bins * binParam.binSize;
@@ -158,10 +161,9 @@ void Particles::InitCompute() {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[0]);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, particleData.data(), GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	particleData.clear();
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[1]);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, NULL, GL_STREAM_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, particleData.data(), GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[2]);
@@ -196,6 +198,7 @@ void Particles::InitCompute() {
 	glBindBufferBase(GL_UNIFORM_BUFFER, 11, binBuffer);
 
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
+	particleData.clear();
 
 	// Set unchanging uniforms
 	glUseProgram(computeCull);
@@ -247,10 +250,10 @@ void Particles::DoCompute() {
 		glUniform1f(glGetUniformLocation(computeUpdate, "preWeight"), pre);
 		glDispatchCompute(particles / 64, 1, 1);
 	} else {
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffers[outBufferIndex]);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particleBuffers[inBufferIndex]);
 		inBufferIndex = outBufferIndex;
 		outBufferIndex = 1 - inBufferIndex;
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffers[inBufferIndex]);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particleBuffers[outBufferIndex]);
 	}
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);

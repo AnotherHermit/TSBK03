@@ -46,7 +46,7 @@ class Program {
 private:
 	SDL_Window *screen;
 	SDL_GLContext glcontext;
-	GLuint winWidth, winHeight;
+	GLint winWidth, winHeight;
 
 	bool isRunning;
 	bool renderModels;

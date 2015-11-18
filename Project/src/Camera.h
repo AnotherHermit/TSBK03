@@ -52,7 +52,7 @@ private:
 	bool isPaused;
 
 	GLuint cameraBuffer;
-	GLuint *winWidth, *winHeight;
+	GLint *winWidth, *winHeight;
 
 	CameraParam param;
 
@@ -61,8 +61,8 @@ private:
 	void UploadParams();
 
 public:
-	Camera(glm::vec3 startpos, GLuint *screenWidth, GLuint *screenHeight, GLfloat viewDistance);
-	void SetFrustum(GLuint screenWidth, GLuint screenHeight, GLfloat viewDistance);
+	Camera(glm::vec3 startpos, GLint *screenWidth, GLint *screenHeight, GLfloat viewDistance);
+	void SetFrustum();
 	void ResetCamera(glm::vec3 pos);
 
 	void MoveForward(GLfloat deltaT);
