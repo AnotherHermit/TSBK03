@@ -27,6 +27,7 @@
 
 #include "Camera.h"
 #include "Particles.h"
+#include "Boid.h"
 
 #include "AntTweakBar.h"
 
@@ -56,6 +57,7 @@ private:
 	ProgramStruct param;
 	GLuint programBuffer;
 
+	Boid *boid;
 	Particles *particleSystem;
 	Camera *cam;
 	TwBar *antBar;

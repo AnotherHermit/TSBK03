@@ -14,8 +14,8 @@ struct Camera {
 	mat4 VTPmatrix;
 	vec4 normals[5];
 	vec4 points[5];
+	vec3 position;
 	float viewDistance;
-	float padding73[3];
 };
 
 layout (std140, binding = 10) uniform CameraBuffer {

@@ -7,7 +7,7 @@
 
 #version 430
 
-layout(local_size_x = 64) in;
+layout(local_size_x = 4, local_size_x = y, local_size_z = 4) in;
 
 struct Particle {
 	vec3 position;
@@ -82,7 +82,8 @@ layout (std140, binding = 13) uniform BoidBuffer {
 };
 
 void main() {
-    uint currentParticle = gl_GlobalInvocationID.x;
+   
+    uint currentParticle = gl_NumWorkGroups.x;
 
     vec3 pos = particlesIn[currentParticle].position;
     vec3 vel = particlesIn[currentParticle].velocity;
@@ -109,7 +110,11 @@ void main() {
 		vel.z = -abs(vel.z);
 	}
 
-	// Calculate boid update for all boids in neighbouring bins
+
+	// Calculate boid update for all particles in current bin
+
+
+
 	ivec3 pos2id = ivec3(min(max(floor(pos / binInfo.binSize), 0.0f), float(binInfo.bins - 1)));
 	ivec3 startID = ivec3(max(pos2id - 1, 0));
 	ivec3 endID = ivec3(min(pos2id + 1, binInfo.bins - 1));

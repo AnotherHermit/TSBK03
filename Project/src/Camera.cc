@@ -13,7 +13,7 @@
 
 Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, GLfloat viewDistance) {
 	isPaused = true;
-	p = startpos;
+	param.position = startpos;
 	yvec = glm::vec3(0.0f, 1.0f, 0.0f);
 
 	mspeed = 100.0f;
@@ -38,9 +38,9 @@ Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, GLfl
 }
 
 void Camera::ResetCamera(glm::vec3 pos) {
-	p = pos;
+	param.position = pos;
 
-	phi = M_PI;
+	phi = 7 * M_PI / 4;
 	theta = M_PI / 2.0f;
 }
 
@@ -91,8 +91,8 @@ void Camera::Update() {
 	up = glm::normalize(glm::cross(side, heading));
 
 	// Update camera matrix
-	lookp = p + heading;
-	param.WTVmatrix = lookAt(p, lookp, yvec);
+	lookp = param.position + heading;
+	param.WTVmatrix = lookAt(param.position, lookp, yvec);
 }
 
 void Camera::UploadParams() {
@@ -111,17 +111,17 @@ void Camera::UpdateCamera() {
 
 void Camera::MoveForward(GLfloat deltaT) {
 	if (!isPaused) {
-		p += heading * mspeed * deltaT;
+		param.position += heading * mspeed * deltaT;
 	}
 }
 void Camera::MoveRight(GLfloat deltaT) {
 	if (!isPaused) {
-		p += side * mspeed * deltaT;
+		param.position += side * mspeed * deltaT;
 	}
 }
 void Camera::MoveUp(GLfloat deltaT) {
 	if (!isPaused) {
-		p += up * mspeed * deltaT;
+		param.position += up * mspeed * deltaT;
 	}
 }
 

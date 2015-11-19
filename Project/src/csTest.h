@@ -10,7 +10,7 @@
 //		Input: updated bin buffer
 //		Output: prefix sum buffer (new buffer or reuse the same? pingpong?)
 
-// 3.	Counting sort of all particles (Comp Shader)
+// 3.	Counting sort of all particles (Comp Shader) #DONE
 //		Input: buffers with particles (2) one updated and one for writing,
 //			Prefix sum buffer, cleared bin buffer
 //		Work: Writes the particles in order based on their assigned bin from the sum buffer

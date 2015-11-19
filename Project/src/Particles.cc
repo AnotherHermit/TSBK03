@@ -16,12 +16,6 @@ Particles::Particles(GLuint numParticles, GLfloat initBinSize) {
 	setParticles = numParticles;
 	particles = setParticles*setParticles*setParticles;
 	computeDrawParticles = 0;
-	startMode = 0;
-
-	pre = 1.0f;
-	coh = 0.03f;
-	sep = 0.03f;
-	ali = 0.03f;
 
 	doUpdate = false;
 
@@ -60,13 +54,8 @@ bool Particles::Init() {
 }
 
 void Particles::SetParticles(GLuint newParticles) {
-	SetParticles(newParticles, startMode);
-}
-
-void Particles::SetParticles(GLuint newParticles, GLuint newType) {
 	setParticles = newParticles;
 	particles = setParticles*setParticles*setParticles;
-	startMode = newType;
 
 	inBufferIndex = 0;
 	outBufferIndex = 1;
@@ -85,25 +74,7 @@ void Particles::SetParticles(GLuint newParticles, GLuint newType) {
 }
 
 void Particles::SetParticleData() {
-	float offset;
-	float offsetY;
-
-	if (startMode == 1) {
-		// Place particles centered over origin
-		offset = -((float)setParticles - 1) / 2;
-		offsetY = offset;
-	} else if (startMode == 2) {
-		// Place particles centered over origin but displaced along y.
-		offset = -((float)setParticles - 1) / 2;
-		offsetY = 100.0f;
-	} else {
-		// Place all particles in first octant
-		offset = 0;
-		offsetY = offset;
-	}
-
 	particleData.resize(particles);
-
 	unsigned int ind = 0;
 	// Create the instance data
 	for (unsigned int i = 0; i < setParticles; ++i) {
@@ -200,10 +171,6 @@ void Particles::InitCompute() {
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
 	particleData.clear();
 
-	// Set unchanging uniforms
-	glUseProgram(computeCull);
-	glUniform1f(glGetUniformLocation(computeCull, "radius"), 1.0f);
-
 	printError("init Compute Error 4");
 }
 
@@ -219,6 +186,9 @@ void Particles::DoCompute() {
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
+#ifdef _DEBUG
+	glFinish();
+#endif
 	printError("Do Compute: Bin");
 
 	// ========== Calculate Prefix sum =========
@@ -231,6 +201,9 @@ void Particles::DoCompute() {
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * binParam.totalBins, prefixArrayOut, GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+#ifdef _DEBUG
+	glFinish();
+#endif
 
 	printError("Do Compute: Prefix");
 
@@ -238,16 +211,15 @@ void Particles::DoCompute() {
 	glUseProgram(computeSort);
 	glDispatchCompute(particles / 64, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+#ifdef _DEBUG
+	glFinish();
+#endif
 
 	printError("Do Compute: Sort");
 
 	// ========== Update Particles =========
 	if (doUpdate) {
 		glUseProgram(computeUpdate);
-		glUniform1f(glGetUniformLocation(computeUpdate, "cohWeight"), coh);
-		glUniform1f(glGetUniformLocation(computeUpdate, "sepWeight"), sep);
-		glUniform1f(glGetUniformLocation(computeUpdate, "aliWeight"), ali);
-		glUniform1f(glGetUniformLocation(computeUpdate, "preWeight"), pre);
 		glDispatchCompute(particles / 64, 1, 1);
 	} else {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffers[outBufferIndex]);
@@ -259,6 +231,10 @@ void Particles::DoCompute() {
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+#ifdef _DEBUG
+	glFinish();
+#endif
+
 	printError("Do Compute: Update");
 
 	// ========== Cull Particles =========
@@ -269,6 +245,9 @@ void Particles::DoCompute() {
 	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
+#ifdef _DEBUG
+	glFinish();
+#endif
 
 	printError("Do Compute: Culling");
 }

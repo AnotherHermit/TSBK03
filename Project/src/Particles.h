@@ -34,12 +34,8 @@ class Particles {
 private:
 	// Particle info
 	GLfloat radius;
-	GLuint startMode;
 	GLuint particles, setParticles;
 	std::vector<ParticleStruct> particleData;
-
-	// Boid parameters
-	GLfloat coh, sep, ali, pre;
 
 	// Bin info
 	BinStruct binParam;
@@ -70,10 +66,6 @@ public:
 
 	GLuint *GetParticlesPtr() { return &particles; }
 	GLuint *GetDrawParticlesPtr() { return &computeDrawParticles; }
-	GLfloat *GetCohPtr() { return &coh; }
-	GLfloat *GetSepPtr() { return &sep; }
-	GLfloat *GetAliPtr() { return &ali; }
-	GLfloat *GetPrePtr() { return &pre; }
 
 	const GLint GetParticles() { return particles; }
 	const GLint GetDrawParticles() { return computeDrawParticles; }
@@ -81,7 +73,6 @@ public:
 	const GLuint GetCullBuffer() { return particleBuffers[2]; }
 
 	void SetParticles(GLuint newParticles);
-	void SetParticles(GLuint newParticles, GLuint newType);
 };
 
 #endif // PARTICLES_H

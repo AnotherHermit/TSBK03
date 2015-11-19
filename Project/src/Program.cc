@@ -104,6 +104,9 @@ bool Program::Init() {
 
 	printError("after particle system init");
 
+	// Set up boids
+	boid = new Boid();
+
 	// Set up different models to render
 	model = new Sphere();
 	model->Init(particleSystem->GetCullBuffer());
@@ -128,22 +131,35 @@ bool Program::Init() {
 	antBar = TwNewBar("Particles");
 
 	TwDefine(" Particles refresh=0.1 ");
-	TwDefine(" Particles size='270 250' ");
+	TwDefine(" Particles size='270 350' ");
 
-	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, "group=Info");
-	TwAddVarRO(antBar, "Total Particles", TW_TYPE_INT32, particleSystem->GetParticlesPtr(), "group=Info");
-	TwAddVarRO(antBar, "Rendered Particles", TW_TYPE_INT32, particleSystem->GetDrawParticlesPtr(), "group=Info");
+	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, " group=Info ");
+	TwAddVarRO(antBar, "Total Particles", TW_TYPE_INT32, particleSystem->GetParticlesPtr(), " group=Info ");
+	TwAddVarRO(antBar, "Rendered Particles", TW_TYPE_INT32, particleSystem->GetDrawParticlesPtr(), " group=Info ");
+
+	TwAddVarRO(antBar, "Camera X", TW_TYPE_FLOAT, cam->PosPtr(), " group=CameraInfo ");
+	TwAddVarRO(antBar, "Camera Y", TW_TYPE_FLOAT, cam->PosPtr() + 1, " group=CameraInfo ");
+	TwAddVarRO(antBar, "Camera Z", TW_TYPE_FLOAT, cam->PosPtr() + 2, " group= CameraInfo ");
+	TwAddVarRO(antBar, "Horizontal view", TW_TYPE_FLOAT, cam->PhiPtr(), " group=CameraInfo ");
+	TwAddVarRO(antBar, "Vertical view", TW_TYPE_FLOAT, cam->ThetaPtr(), " group=CameraInfo ");
 
 	TwAddVarRW(antBar, "Camera Speed", TW_TYPE_FLOAT, cam->SpeedPtr(), " min=0 max=200 step=10 group=Controls ");
 	TwAddVarRW(antBar, "View Distance", TW_TYPE_FLOAT, cam->ViewDistancePtr(), " min=0 max=2000 step=100 group=Controls ");
 	TwAddVarRW(antBar, "Simulation speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls ");
 
-	TwAddVarRW(antBar, "Previous", TW_TYPE_FLOAT, particleSystem->GetPrePtr(), " min=0 max=1 step=0.01 group=Boid ");
-	TwAddVarRW(antBar, "Cohesion", TW_TYPE_FLOAT, particleSystem->GetCohPtr(), " min=0 max=1 step=0.01 group=Boid ");
-	TwAddVarRW(antBar, "Separation", TW_TYPE_FLOAT, particleSystem->GetSepPtr(), " min=0 max=1 step=0.01 group=Boid ");
-	TwAddVarRW(antBar, "Alignment", TW_TYPE_FLOAT, particleSystem->GetAliPtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Previous", TW_TYPE_FLOAT, boid->GetPreviousPtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Cohesion", TW_TYPE_FLOAT, boid->GetCohesionPtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Separation", TW_TYPE_FLOAT, boid->GetSeparationPtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Alignment", TW_TYPE_FLOAT, boid->GetAlignmentPtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Fear", TW_TYPE_FLOAT, boid->GetFearPtr(), " min=0 max=1 step=0.01 group=Boid ");
 
 	printError("after AntBar init");
+
+	int64_t maxWorkgroup;
+	glGetInteger64v(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxWorkgroup);
+	std::cout << "Max workgroup: " << maxWorkgroup << std::endl;
+
+	printError("after Compute group printout");
 
 	return true;
 }
@@ -194,18 +210,6 @@ void Program::OnKeypress(SDL_Event *Event) {
 		break;
 	case SDLK_2:
 		particleSystem->SetParticles(particleSystem->GetSetParticles() + 4);
-		break;
-	case SDLK_3:
-		particleSystem->SetParticles(particleSystem->GetSetParticles(), 0);
-		cam->ResetCamera(glm::vec3(0, 0, 50));
-		break;
-	case SDLK_4:
-		particleSystem->SetParticles(particleSystem->GetSetParticles(), 1);
-		cam->ResetCamera(glm::vec3(0, 0, 50));
-		break;
-	case SDLK_5:
-		particleSystem->SetParticles(particleSystem->GetSetParticles(), 2);
-		cam->ResetCamera(glm::vec3(0, 200, 50));
 		break;
 	case SDLK_r:
 		particleSystem->SetParticles(particleSystem->GetSetParticles());
@@ -267,6 +271,9 @@ void Program::Update() {
 	// Update the camera
 	cam->UpdateCamera();
 
+	// Update the boid parameters
+	boid->Update();
+
 	// Update the particles
 	particleSystem->DoCompute();
 
@@ -279,7 +286,7 @@ void Program::Render() {
 	glEnable(GL_CULL_FACE);
 
 	if (renderModels) {
-		model->Draw(particleSystem->GetDrawParticles());
+		model->Draw(particleSystem->GetDrawParticles());	
 	} else {
 		billboard->Draw(particleSystem->GetDrawParticles());
 	}

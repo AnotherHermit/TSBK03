@@ -35,14 +35,14 @@ struct CameraParam {
 	glm::mat4 VTPmatrix;
 	glm::vec4 normals[5];
 	glm::vec4 points[5];
+	glm::vec3 position;
 	GLfloat viewDistance;
-	GLfloat padding73[3];
 };
 
 
 class Camera {
 private:
-	glm::vec3 p, lookp, yvec;
+	glm::vec3 lookp, yvec;
 	glm::vec3 heading, side, up;
 	GLfloat mspeed, rspeed, phi, theta;
 
@@ -74,7 +74,7 @@ public:
 
 	void TogglePause() { isPaused = !isPaused; }
 
-	const glm::vec3 GetPos() { return p; }
+	const glm::vec3 GetPos() { return param.position; }
 	const glm::vec3 GetHeading() { return heading; }
 	const glm::vec3 GetSide() { return side; }
 	const glm::vec3 GetUp() { return up; }
@@ -82,7 +82,9 @@ public:
 	GLfloat* ViewDistancePtr() { return &param.viewDistance; }
 	GLfloat* SpeedPtr() { return &mspeed; }
 	GLfloat* HeadingPtr() { return glm::value_ptr(heading); }
-
+	GLfloat* PosPtr() { return glm::value_ptr(param.position); }
+	GLfloat* PhiPtr() { return &phi; }
+	GLfloat* ThetaPtr() { return &theta; }
 };
 
 #endif // CAMERA_H

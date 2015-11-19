@@ -253,6 +253,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cc" />
+    <ClCompile Include="src\Boid.cpp" />
     <ClCompile Include="src\Camera.cc" />
     <ClCompile Include="src\common\GL_utilities.cc" />
     <ClCompile Include="src\common\loadobj.cc" />
@@ -264,6 +265,7 @@
     <ClCompile Include="src\Program.cc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Boid.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\common\AntTweak\AntTweakBar.h" />
     <ClInclude Include="src\common\GL_utilities.h" />
@@ -289,6 +291,7 @@
     <None Include="src\shaders\sort.comp" />
     <None Include="src\shaders\update.comp" />
     <None Include="src\shaders\update.vert" />
+    <None Include="src\shaders\update2.comp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
