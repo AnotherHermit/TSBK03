@@ -126,7 +126,7 @@ void Particles::CompileComputeShader(GLuint* program, const char* path) {
 
 void Particles::InitCompute() {
 
-	int setCounter = 0;
+	GLuint setCounter[5] = { 0, 1, 0, 0, 0 };
 
 	// Initialize buffers
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[0]);
@@ -154,12 +154,14 @@ void Particles::InitCompute() {
 	printError("init Compute Error 2");
 
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer);
-	glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &setCounter, GL_STREAM_READ);
+	glBufferData(GL_ATOMIC_COUNTER_BUFFER, 5 * sizeof(GLuint), setCounter, GL_STREAM_READ);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
 	glBindBuffer(GL_UNIFORM_BUFFER, binBuffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(BinStruct), &binParam, GL_STREAM_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	
 
 	printError("init Compute Error 3");
 
@@ -238,13 +240,25 @@ void Particles::DoCompute() {
 	printError("Do Compute: Update");
 
 	// ========== Cull Particles =========
+
+	GLuint tempCounter[4];
+
+	
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer);
+	glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &reset); // Clear data before since data is used when drawing
+	glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT);
+
 	glUseProgram(computeCull);
 	glDispatchCompute(particles / 64, 1, 1);
-	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer);
-	glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &computeDrawParticles);
-	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, &reset);
+	
+	glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, 5 * sizeof(GLuint), tempCounter);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, counterBuffer);
+	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+	//computeDrawParticles = tempCounter[0];
+	//printf("Counter Data: %u, %u, %u, %u\n", tempCounter[0], tempCounter[1], tempCounter[2], tempCounter[3]);
+
 #ifdef _DEBUG
 	glFinish();
 #endif

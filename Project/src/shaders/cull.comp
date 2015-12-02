@@ -50,7 +50,7 @@ layout (std140, binding = 12) uniform ProgramBuffer {
 };
 
 // Atomic counter of rendered particles;
-layout(binding = 0) uniform atomic_uint particlesToRender;
+layout(binding = 0) uniform atomic_uint particlesToRender[5];
 
 void main(void) {
 	uint currentParticle = gl_GlobalInvocationID.x;
@@ -86,7 +86,7 @@ void main(void) {
 	keepPoint = keepPoint && (distance > 0);
 	
 	if(keepPoint) {
-		outParticleNum = atomicCounterIncrement(particlesToRender);
+		outParticleNum = atomicCounterIncrement(particlesToRender[0]);
 		cullPositions[outParticleNum * 3] = pos.x;
 		cullPositions[outParticleNum * 3 + 1] = pos.y;
 		cullPositions[outParticleNum * 3 + 2] = pos.z;

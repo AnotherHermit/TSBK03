@@ -95,7 +95,7 @@ void Billboard::Draw(GLuint num) {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texID);
 	glBindVertexArray(vao);
-	if (num > 0) { glDrawArrays(GL_POINTS, 0, num); }
+	glDrawArraysIndirect(GL_POINTS, 0);
 	glBindVertexArray(0);
 
 	printError("Draw Billboards");
