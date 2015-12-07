@@ -5,8 +5,8 @@
 //
 ///////////////////////////////////////
 
-#ifndef TESTS_H
-#define TESTS_H
+#ifndef FIXTURES_H
+#define FIXTURES_H
 
 #include <gtest/gtest.h>
 #include "Particles.h"
@@ -21,6 +21,9 @@ protected:
 	Timer* CPUTimer;
 	GLTimer* GPUTimer;
 
+	void InitOpenGL();
+	void ExitOpenGL();
+
 public:
 	ComputeTest() {};
 	~ComputeTest() {};
@@ -29,7 +32,7 @@ public:
 	virtual void TearDown();
 };
 
-void ComputeTest::SetUp() {
+void ComputeTest::InitOpenGL() {
 	ASSERT_EQ(0, SDL_Init(SDL_INIT_VIDEO)) << "Failed to init SDL";
 
 	screen = SDL_CreateWindow("Particles!!", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 100, 100, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
@@ -48,13 +51,11 @@ void ComputeTest::SetUp() {
 	GPUTimer = new GLTimer();
 }
 
-void ComputeTest::TearDown() {
+void ComputeTest::ExitOpenGL() {
 	if (CPUTimer != nullptr) {
-		std::cout << "[ CPU TIME ] " << CPUTimer->getTimeMS() << " ms" << std::endl;
 		delete(CPUTimer);
 	}
 	if (GPUTimer != nullptr) {
-		std::cout << "[ GPU TIME ] " << GPUTimer->getTimeMS() << " ms" << std::endl;
 		delete(GPUTimer);
 	}
 
@@ -62,4 +63,19 @@ void ComputeTest::TearDown() {
 	SDL_Quit();
 }
 
-#endif // TESTS_H
+void ComputeTest::SetUp() {
+	InitOpenGL();
+}
+
+void ComputeTest::TearDown() {
+	if (CPUTimer != nullptr) {
+		std::cout << "[ CPU TIME ] " << CPUTimer->getTimeMS() << " ms" << std::endl;
+	}
+	if (GPUTimer != nullptr) {
+		std::cout << "[ GPU TIME ] " << GPUTimer->getTimeMS() << " ms" << std::endl;
+	}
+
+	ExitOpenGL();
+}
+
+#endif // FIXTURES_H

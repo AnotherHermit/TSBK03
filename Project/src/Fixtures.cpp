@@ -5,7 +5,7 @@
 //
 ///////////////////////////////////////
 
-#include "Tests.h"
+#include "Fixtures.h"
 #include <iostream>
 
 GLint NumParticles[] = {16, 32, 64, 128, 52};

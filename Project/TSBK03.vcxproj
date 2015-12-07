@@ -340,7 +340,7 @@
     <ClCompile Include="src\Drawable.cc" />
     <ClCompile Include="src\Particles.cc" />
     <ClCompile Include="src\Program.cc" />
-    <ClCompile Include="src\Tests.cpp" />
+    <ClCompile Include="src\Fixtures.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Boid.h" />
@@ -355,7 +355,7 @@
     <ClInclude Include="src\Drawable.h" />
     <ClInclude Include="src\Particles.h" />
     <ClInclude Include="src\Program.h" />
-    <ClInclude Include="src\Tests.h" />
+    <ClInclude Include="src\Fixtures.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\billboard.frag" />

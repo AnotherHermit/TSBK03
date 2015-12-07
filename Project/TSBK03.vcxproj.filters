@@ -69,7 +69,7 @@
     <ClCompile Include="src\Boid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Tests.cpp">
+    <ClCompile Include="src\Fixtures.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -110,7 +110,7 @@
     <ClInclude Include="src\Ideas and TODO.txt">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Tests.h">
+    <ClInclude Include="src\Fixtures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
