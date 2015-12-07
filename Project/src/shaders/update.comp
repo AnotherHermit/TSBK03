@@ -47,21 +47,21 @@ struct Boid {
 	float fearWeight;
 };
 
-layout (std140, binding = 0) writeonly buffer ParticleBuffer1
+layout (std430, binding = 0) writeonly buffer ParticleBuffer1
 {
     Particle particlesOut[];  
 };
 
-layout (std140, binding = 1) readonly buffer ParticleBuffer2
+layout (std430, binding = 1) readonly buffer ParticleBuffer2
 {
     Particle particlesIn[];  
 };
 
-layout (binding = 3) readonly buffer BinCounterBuffer {
+layout (std430, binding = 3) readonly buffer BinCounterBuffer {
 	uint binCounter[];
 };
 
-layout (binding = 4) readonly buffer PrefixSumBuffer {
+layout (std430, binding = 4) readonly buffer PrefixSumBuffer {
 	uint prefixSum[];
 };
 

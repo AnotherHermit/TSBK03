@@ -18,19 +18,24 @@
 #	endif
 #endif
 
+#include <chrono>
+
+typedef std::chrono::high_resolution_clock Time;
+typedef std::chrono::duration<float> fsec;
+
 char* readFile(const char *file);
 
 void dumpInfo(void);
-void printError(const char *functionName);
-void printShaderInfoLog(GLuint obj, const char *fn);
-void printProgramInfoLog(GLuint obj, const char *vfn, const char *ffn,
+GLint printError(const char *functionName);
+GLint printShaderInfoLog(GLuint obj, const char *fn);
+GLint printProgramInfoLog(GLuint obj, const char *vfn, const char *ffn,
 						 const char *gfn, const char *tcfn, const char *tefn);
 
 GLuint loadShaders(const char *vertFileName, const char *fragFileName);
 GLuint loadShadersG(const char *vertFileName, const char *fragFileName, const char *geomFileName);
 GLuint loadShadersGT(const char *vertFileName, const char *fragFileName, const char *geomFileName,
 					 const char *tcFileName, const char *teFileName);
-
+GLint CompileComputeShader(GLuint* program, const char* path);
 
 void initKeymapManager();
 char keyIsDown(unsigned char c);
@@ -51,5 +56,38 @@ FBOstruct *initFBO(int width, int height, int int_method);
 FBOstruct *initFBO2(int width, int height, int int_method, int create_depthimage);
 void useFBO(FBOstruct *out, FBOstruct *in1, FBOstruct *in2);
 void updateScreenSizeForFBOHandler(int w, int h); // Temporary workaround to inform useFBO of screen size changes
+
+
+// ===== Timers =====
+
+class GLTimer {
+private:
+	GLuint queryID;
+	GLuint64 time;
+
+public:
+	GLTimer();
+	~GLTimer();
+
+	void startTimer();
+	void endTimer();
+	GLfloat getTime();
+	GLfloat getTimeMS();
+};
+
+class Timer {
+public:
+	Timer();
+
+	void startTimer();
+	void endTimer();
+	GLfloat getTime();
+	GLfloat getLapTime();
+	GLfloat getTimeMS();
+
+private:
+	Time::time_point startTime;
+	GLfloat lapTime, time;
+};
 
 #endif

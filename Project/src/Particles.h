@@ -33,14 +33,13 @@ struct BinStruct {
 class Particles {
 private:
 	// Particle info
-	GLfloat radius;
 	GLuint particles, setParticles;
 	std::vector<ParticleStruct> particleData;
 
 	// Bin info
 	BinStruct binParam;
 	GLuint binBuffer;
-	GLuint *prefixArrayIn, *prefixArrayOut;
+	GLuint *prefixArray;
 
 	// Others
 	bool doUpdate;
@@ -53,24 +52,37 @@ private:
 	GLuint computeBin, computeSort, computeUpdate, computeCull;
 	GLuint computeDrawParticles;
 	GLuint inBufferIndex, outBufferIndex;
-	void CompileComputeShader(GLuint* program, const char* path);
 	void InitCompute();
 
 public:
-	Particles(GLuint numParticles, GLfloat initRadius);
+	Particles(GLuint numParticles, GLfloat initBinSize);
+	~Particles();
 
 	bool Init();
 	void DoCompute();
+
+	void ComputeBins();
+	void ComputePrefix();
+	void ComputeSort();
+	void ComputeUpdate();
+	void ComputeCull();
 
 	void ToggleUpdate() { doUpdate = !doUpdate; }
 
 	GLuint *GetParticlesPtr() { return &particles; }
 	GLuint *GetDrawParticlesPtr() { return &computeDrawParticles; }
+	ParticleStruct* GetParticleData() { return particleData.data(); }
 
 	const GLint GetParticles() { return particles; }
 	const GLint GetDrawParticles() { return computeDrawParticles; }
 	const GLint GetSetParticles() { return setParticles; }
+	const GLuint GetTotalBins() { return binParam.totalBins; }
+	const GLuint GetBins() { return binParam.bins; }
+	const GLfloat GetBinSize() { return binParam.binSize; }
 	const GLuint GetCullBuffer() { return particleBuffers[2]; }
+
+	GLuint* GetParticleBuffers() { return particleBuffers; }
+	GLuint* GetBinBuffers() { return binBuffers; }
 
 	void SetParticles(GLuint newParticles);
 };

@@ -29,8 +29,7 @@ Program::Program() {
 	renderModels = false;
 
 	// Time init
-	startTime = Time::now();
-	timeUpdate();
+	time.startTimer();
 }
 
 int Program::Execute() {
@@ -52,10 +51,10 @@ int Program::Execute() {
 }
 
 void Program::timeUpdate() {
-	GLfloat t = fsec(Time::now() - startTime).count();
-	param.deltaT = t - param.currentT;
-	param.currentT = t;
-	FPS = 1.0f / param.deltaT;
+	time.endTimer();
+	param.deltaT = time.getLapTime();
+	param.currentT = time.getTime();
+	FPS = 1.0f / time.getLapTime();
 }
 
 bool Program::Init() {
@@ -90,7 +89,7 @@ bool Program::Init() {
 	glm::vec3 cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
 	GLfloat cameraViewDistance = 500.0f;
 
-	GLuint particlesPerSide = 32;
+	GLuint particlesPerSide = 104;
 	GLfloat binSize = 20.0f;
 
 	// Set up the camera
@@ -100,7 +99,9 @@ bool Program::Init() {
 
 	// Set up particle system
 	particleSystem = new Particles(particlesPerSide, binSize);
-	particleSystem->Init();
+	if (!particleSystem->Init()) {
+		return false;
+	}
 
 	printError("after particle system init");
 
@@ -206,10 +207,10 @@ void Program::OnKeypress(SDL_Event *Event) {
 		particleSystem->ToggleUpdate();
 		break;
 	case SDLK_1:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() - 4);
+		particleSystem->SetParticles(particleSystem->GetSetParticles() - 8);
 		break;
 	case SDLK_2:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() + 4);
+		particleSystem->SetParticles(particleSystem->GetSetParticles() + 8);
 		break;
 	case SDLK_r:
 		particleSystem->SetParticles(particleSystem->GetSetParticles());

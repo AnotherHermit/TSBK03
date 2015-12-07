@@ -29,12 +29,9 @@
 #include "Particles.h"
 #include "Boid.h"
 
+#include "GL_utilities.h"
+
 #include "AntTweakBar.h"
-
-#include <chrono>
-
-typedef std::chrono::high_resolution_clock Time;
-typedef std::chrono::duration<float> fsec;
 
 struct ProgramStruct {
 	GLfloat currentT;
@@ -52,7 +49,7 @@ private:
 	bool isRunning;
 	bool renderModels;
 
-	Time::time_point startTime;
+	Timer time;
 	GLfloat FPS;
 	ProgramStruct param;
 	GLuint programBuffer;

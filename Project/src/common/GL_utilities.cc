@@ -29,7 +29,7 @@ char* readFile(const char *file) {
 	if (file == NULL) {
 		return NULL;
 	}
-		
+
 	fptr = fopen(file, "rb"); /* Open file for reading */
 	if (!fptr) {
 		fprintf(stderr, "Could not open file: %s!\n", file);
@@ -63,10 +63,12 @@ char* readFile(const char *file) {
 }
 
 // Infolog: Show result of shader compilation
-void printShaderInfoLog(GLuint obj, const char *fn) {
+GLint printShaderInfoLog(GLuint obj, const char *fn) {
 	GLint infologLength = 0;
 	GLint charsWritten = 0;
 	char *infoLog;
+
+	GLint wasError = 0;
 
 	glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
 
@@ -76,14 +78,19 @@ void printShaderInfoLog(GLuint obj, const char *fn) {
 		glGetShaderInfoLog(obj, infologLength, &charsWritten, infoLog);
 		fprintf(stderr, "%s\n", infoLog);
 		free(infoLog);
+		wasError = 1;
 	}
+
+	return wasError;
 }
 
-void printProgramInfoLog(GLuint obj, const char *vfn, const char *ffn,
+GLint printProgramInfoLog(GLuint obj, const char *vfn, const char *ffn,
 						 const char *gfn, const char *tcfn, const char *tefn) {
 	GLint infologLength = 0;
 	GLint charsWritten = 0;
 	char *infoLog;
+
+	GLint wasError = 0;
 
 	glGetProgramiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
 
@@ -101,7 +108,11 @@ void printProgramInfoLog(GLuint obj, const char *vfn, const char *ffn,
 		glGetProgramInfoLog(obj, infologLength, &charsWritten, infoLog);
 		fprintf(stderr, "%s\n", infoLog);
 		free(infoLog);
+
+		wasError = 1;
 	}
+
+	return wasError;
 }
 
 // Compile a shader, return reference to it
@@ -138,14 +149,24 @@ GLuint compileShaders(const char *vs, const char *fs, const char *gs, const char
 	p = glCreateProgram();
 
 	glAttachShader(p, v);
-	if (fs != NULL)
+	glDeleteShader(v);
+	if (fs != NULL) {
 		glAttachShader(p, f);
-	if (gs != NULL)
+		glDeleteShader(v);
+	}
+	if (gs != NULL) {
 		glAttachShader(p, g);
-	if (tcs != NULL)
+		glDeleteShader(g);
+	}
+	if (tcs != NULL) {
 		glAttachShader(p, tc);
-	if (tes != NULL)
+		glDeleteShader(tc);
+	}
+	if (tes != NULL) {
 		glAttachShader(p, te);
+		glDeleteShader(te);
+	}
+	
 
 	printShaderInfoLog(v, vfn);
 	if (fs != NULL)		printShaderInfoLog(f, ffn);
@@ -204,6 +225,32 @@ GLuint loadShadersGT(const char *vertFileName, const char *fragFileName, const c
 	return p;
 }
 
+GLint CompileComputeShader(GLuint* program, const char* path) {
+	*program = glCreateProgram();
+	GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
+	GLint wasError = 0;
+
+	char* cs = readFile((char *)path);
+	if (cs == NULL) {
+		printf("Error reading shader!\n");
+	}
+
+	glShaderSource(computeShader, 1, &cs, NULL);
+	glCompileShader(computeShader);
+	wasError += printShaderInfoLog(computeShader, path);
+	//get errors 
+
+	glAttachShader(*program, computeShader);
+	glDeleteShader(computeShader);
+	glLinkProgram(*program);
+	//get errors from the program linking.
+	wasError += printProgramInfoLog(*program, path, NULL, NULL, NULL, NULL);
+
+	printError("Compile compute shader error!");
+
+	return wasError;
+}
+
 // End of Shader loader
 
 void dumpInfo(void) {
@@ -218,15 +265,18 @@ static GLenum lastError = 0;
 static char lastErrorFunction[1024] = "";
 
 /* report GL errors, if any, to stderr */
-void printError(const char *functionName) {
+GLint printError(const char *functionName) {
 	GLenum error;
+	GLint wasError = 0;
 	while ((error = glGetError()) != GL_NO_ERROR) {
 		if ((lastError != error) || (strcmp(functionName, lastErrorFunction))) {
 			fprintf(stderr, "GL error 0x%X detected in %s\n", error, functionName);
 			strcpy(lastErrorFunction, functionName);
 			lastError = error;
+			wasError = 1;
 		}
 	}
+	return wasError;
 }
 
 
@@ -431,4 +481,66 @@ void useFBO(FBOstruct *out, FBOstruct *in1, FBOstruct *in2) {
 		glBindTexture(GL_TEXTURE_2D, in1->texid);
 	else
 		glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
+// ===== GL Timer =====
+
+GLTimer::GLTimer() {
+	glGenQueries(1, &queryID);
+	time = 0;
+}
+
+GLTimer::~GLTimer() {
+	glDeleteQueries(1, &queryID);
+}
+
+void GLTimer::startTimer() {
+	glBeginQuery(GL_TIME_ELAPSED, queryID);
+}
+
+void GLTimer::endTimer() {
+	glEndQuery(GL_TIME_ELAPSED);
+
+	GLint done = 0;
+	while (!done) {
+		glGetQueryObjectiv(queryID, GL_QUERY_RESULT_AVAILABLE, &done);
+	}
+	glGetQueryObjectui64v(queryID, GL_QUERY_RESULT, &time);
+}
+
+GLfloat GLTimer::getTime() {
+	return (GLfloat)time / 1000.0f;
+}
+
+GLfloat GLTimer::getTimeMS() {
+	return (GLfloat)time / 1000000.0f;
+}
+
+
+Timer::Timer() {
+	time = 0;
+	lapTime = 0;
+}
+
+void Timer::startTimer() {
+	startTime = Time::now();
+}
+
+void Timer::endTimer() {
+	GLfloat tempTime = fsec(Time::now() - startTime).count();
+	lapTime = tempTime - time;
+	time = tempTime;
+}
+
+GLfloat Timer::getTime() {
+	return time;
+}
+
+GLfloat Timer::getTimeMS() {
+	return time * 1000.0f;
+}
+
+GLfloat Timer::getLapTime() {
+	return lapTime;
 }

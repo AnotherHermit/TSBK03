@@ -5,6 +5,8 @@
 //
 ///////////////////////////////////////
 
+#ifndef _TEST
+
 // ==== Includes ====
 #include "Program.h"
 
@@ -14,3 +16,18 @@ int main(int argc, char *argv[])
 	Program program;
 	return program.Execute();
 }
+
+#else
+
+#include <gtest/gtest.h>
+
+// ==== Main Program ====
+int main(int argc, char *argv[]) {
+	testing::InitGoogleTest(&argc, argv);
+	RUN_ALL_TESTS();
+
+	printf("Press enter to quit...");
+	getchar();
+}
+
+#endif

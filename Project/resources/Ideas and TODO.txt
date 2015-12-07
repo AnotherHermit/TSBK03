@@ -57,5 +57,3 @@
 // Counters													~= 0
 //		* Atomic counter for culling (1 int)
 //															= 672MB
-
-#pragma once
