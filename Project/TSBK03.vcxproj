@@ -341,6 +341,7 @@
     <ClCompile Include="src\Particles.cc" />
     <ClCompile Include="src\Program.cc" />
     <ClCompile Include="src\Fixtures.cpp" />
+    <ClCompile Include="src\Tests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Boid.h" />
@@ -356,6 +357,7 @@
     <ClInclude Include="src\Particles.h" />
     <ClInclude Include="src\Program.h" />
     <ClInclude Include="src\Fixtures.h" />
+    <ClInclude Include="src\Tests.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\billboard.frag" />
@@ -367,6 +369,7 @@
     <None Include="src\shaders\culling.vert" />
     <None Include="src\shaders\particle.frag" />
     <None Include="src\shaders\particle.vert" />
+    <None Include="src\shaders\prefix.comp" />
     <None Include="src\shaders\sort.comp" />
     <None Include="src\shaders\update.comp" />
     <None Include="src\shaders\update.vert" />

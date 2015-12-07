@@ -51,13 +51,14 @@ Particles::~Particles() {
 }
 
 bool Particles::Init() {
-	srand(0);
+	srand(1);
 
 	GLint isOk = 0;
 
 	SetParticleData();
 
 	isOk += CompileComputeShader(&computeBin, "src/shaders/bin.comp");
+	isOk += CompileComputeShader(&computePrefix, "src/shaders/prefix.comp");
 	isOk += CompileComputeShader(&computeSort, "src/shaders/sort.comp");
 	isOk += CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
 	isOk += CompileComputeShader(&computeCull, "src/shaders/cull.comp");

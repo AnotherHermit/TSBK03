@@ -8,76 +8,120 @@
 #include "Fixtures.h"
 #include <iostream>
 
-GLint NumParticles[] = {16, 32, 64, 128, 52};
-INSTANTIATE_TEST_CASE_P(DifferentNumParticlesTest, ComputeTest, ::testing::Values(&NumParticles[0], &NumParticles[1], &NumParticles[2], &NumParticles[3], &NumParticles[4]));
+// ===== General compute shader setup =====
 
-TEST_P(ComputeTest, BinTest) {
-	// Do the work
-	GPUTimer->startTimer();
+void ComputeTest::InitOpenGL() {
+	ASSERT_EQ(0, SDL_Init(SDL_INIT_VIDEO)) << "Failed to init SDL";
 
-	parts->ComputeBins();
+	screen = SDL_CreateWindow("Particles!!", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 100, 100, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+	ASSERT_FALSE(screen == 0);
+	glcontext = SDL_GL_CreateContext(screen);
 
-	GPUTimer->endTimer();
-	
-	// Get the results
-	GLint* resultBin = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[0], GL_READ_WRITE);
-	ParticleStruct* resultPart = (ParticleStruct*)glMapNamedBuffer(parts->GetParticleBuffers()[0], GL_READ_WRITE);
+	ASSERT_EQ(GLEW_OK, glewInit()) << "Failed to initialize GLEW";
 
-	// Compare to CPU based test for bins
-	CPUTimer->startTimer();
+	CPUTimer = new Timer();
+	GPUTimer = new GLTimer();
+}
+
+void ComputeTest::ExitOpenGL() {
+	if (CPUTimer != nullptr) {
+		delete(CPUTimer);
+	}
+	if (GPUTimer != nullptr) {
+		delete(GPUTimer);
+	}
+
+	SDL_GL_DeleteContext(glcontext);
+	SDL_Quit();
+}
+
+// ===== Bun particles =====
+
+void ComputeBin::SetUp() {
+	InitOpenGL();
+
+	GLuint particlesPerSide = *GetParam();
+	GLfloat binSize = 20.0f;
+
+	parts = new Particles(particlesPerSide, binSize);
+	ASSERT_TRUE(parts->Init());
+
+	CPUBin = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
+	memset(CPUBin, 0, sizeof(GLint) * parts->GetTotalBins());
+
+	glFinish();
+}
+
+void ComputeBin::TearDown() {
+	if (CPUTimer != nullptr) {
+		std::cout << "[ CPU TIME ] " << CPUTimer->getTimeMS() << " ms" << std::endl;
+	}
+	if (GPUTimer != nullptr) {
+		std::cout << "[ GPU TIME ] " << GPUTimer->getTimeMS() << " ms" << std::endl;
+	}
+
+	delete(CPUBin);
+	delete(parts);
+
+	ExitOpenGL();
+}
+
+void ComputeBin::CPUSolution() {
 	for (size_t i = 0; i < parts->GetParticles(); i++) {
 		glm::vec3 pos = parts->GetParticleData()[i].position / 20.0f;
 		GLuint bin = (GLuint)floor(pos.x) + (GLuint)floor(pos.y) * parts->GetBins() + (GLuint)floor(pos.z) * parts->GetBins() * parts->GetBins();
 
-		resultBin[bin]--;
-
-		ASSERT_EQ(resultPart[i].bin, bin) << "Particle " << i << " has wrong bin.";
+		CPUBin[bin]++;
+		parts->GetParticleData()[i].bin = bin;
 	}
-	CPUTimer->endTimer();
-
-	// Make sure bin count is correct
-	GLint totalSum = 0;
-	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
-		totalSum += resultBin[i];
-		EXPECT_EQ(0, resultBin[i]) << "Bin " << i << " has wrong count.";
-	}
-
-	ASSERT_EQ(0, totalSum) << "Total sum of particles is wrong";
-
-	// A little cleanup
-	glUnmapNamedBuffer(parts->GetBinBuffers()[0]);
-	glUnmapNamedBuffer(parts->GetParticleBuffers()[0]);
 }
 
-TEST_P(ComputeTest, PrefixTest) {
-	// Prepare
-	parts->ComputeBins();
 
-	// Do the work
-	GPUTimer->startTimer();
+// ===== Prefix sum =====
 
-	parts->ComputePrefix();
+void ComputePrefix::SetUp() {
+	InitOpenGL();
 
-	GPUTimer->endTimer();
+	GLuint particlesPerSide = *GetParam(); // 52 fails (?)
+	GLfloat binSize = 20.0f;
 
-	// Get the results
-	GLint* BinBuffer = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[0], GL_READ_WRITE);
-	GLint* PrefixBuffer = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[1], GL_READ_WRITE);
+	parts = new Particles(particlesPerSide, binSize);
+	ASSERT_TRUE(parts->Init());
 
-	// Compare to CPU based test for bins
-	CPUTimer->startTimer();
+	CPUBin = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
 
+	srand(1);
+	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
+		CPUBin[i] = rand() % 30;
+		totalSum += CPUBin[i];
+	}
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, parts->GetBinBuffers()[0]); // Bin count buffer
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * parts->GetTotalBins(), CPUBin, GL_STREAM_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glFinish();
+}
+
+void ComputePrefix::TearDown() {
+	if (CPUTimer != nullptr) {
+		std::cout << "[ CPU TIME ] " << CPUTimer->getTimeMS() << " ms" << std::endl;
+	}
+	if (GPUTimer != nullptr) {
+		std::cout << "[ GPU TIME ] " << GPUTimer->getTimeMS() << " ms" << std::endl;
+	}
+
+	delete(CPUBin);
+	delete(parts);
+
+	ExitOpenGL();
+}
+
+void ComputePrefix::CPUSolution() {
 	GLint sum = 0;
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
-	
-		EXPECT_EQ(sum, PrefixBuffer[i]) << "Prefix " << i << " is not correct sum.";
-		sum += BinBuffer[i];
+		std::swap(CPUBin[i], sum);
+		sum += CPUBin[i];
 	}
-	CPUTimer->endTimer();
-	
-	ASSERT_EQ(parts->GetParticles(), sum) << "Total prefix sum is wrong.";
-
-	// A little cleanup
-	glUnmapNamedBuffer(parts->GetBinBuffers()[0]);
-	glUnmapNamedBuffer(parts->GetBinBuffers()[1]);
 }
+

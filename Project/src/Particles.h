@@ -49,7 +49,7 @@ private:
 
 	// Compute shader stuff
 	GLuint particleBuffers[3], binBuffers[2], counterBuffer;
-	GLuint computeBin, computeSort, computeUpdate, computeCull;
+	GLuint computeBin, computePrefix, computeSort, computeUpdate, computeCull;
 	GLuint computeDrawParticles;
 	GLuint inBufferIndex, outBufferIndex;
 	void InitCompute();

@@ -72,6 +72,9 @@
     <ClCompile Include="src\Fixtures.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\common\GL_utilities.h">
@@ -113,6 +116,9 @@
     <ClInclude Include="src\Fixtures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\Tests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\culling.geom">
@@ -152,6 +158,9 @@
       <Filter>Source Files\Shaders\Compute</Filter>
     </None>
     <None Include="src\shaders\update2.comp">
+      <Filter>Source Files\Shaders\Compute</Filter>
+    </None>
+    <None Include="src\shaders\prefix.comp">
       <Filter>Source Files\Shaders\Compute</Filter>
     </None>
   </ItemGroup>
