@@ -12,7 +12,7 @@ Boid::Boid() {
 	param.cohesion = 0.03f;
 	param.separation = 0.03f;
 	param.alignment = 0.03f;
-	param.fear = 0.30;
+	param.fear = 0.30f;
 
 	glGenBuffers(1, &boidBuffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 13, boidBuffer);

@@ -176,7 +176,7 @@ void Particles::InitCompute() {
 void Particles::ComputeBins() {
 	glUseProgram(computeBin);
 	glDispatchCompute(particles / 64, 1, 1);
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Bin");
 }
@@ -231,10 +231,11 @@ void Particles::ComputeUpdate() {
 
 void Particles::ComputeCull() {
 	//GLuint tempCounter[4];
+	GLuint reset = 0;
 
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer);
-	glClearBufferData(GL_ATOMIC_COUNTER_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, NULL); // Clear data before since data is used when drawing
+	glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &reset); // Clear data before since data is used when drawing
 	glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT);
 
 	glUseProgram(computeCull);

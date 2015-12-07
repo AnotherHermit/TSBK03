@@ -8,7 +8,10 @@
 #include "Tests.h"
 #include <iostream>
 
-TEST_F(ComputeTest, BinTest) {
+GLint NumParticles[] = {16, 32, 64, 128, 52};
+INSTANTIATE_TEST_CASE_P(DifferentNumParticlesTest, ComputeTest, ::testing::Values(&NumParticles[0], &NumParticles[1], &NumParticles[2], &NumParticles[3], &NumParticles[4]));
+
+TEST_P(ComputeTest, BinTest) {
 	// Do the work
 	GPUTimer->startTimer();
 
@@ -46,7 +49,7 @@ TEST_F(ComputeTest, BinTest) {
 	glUnmapNamedBuffer(parts->GetParticleBuffers()[0]);
 }
 
-TEST_F(ComputeTest, PrefixTest) {
+TEST_P(ComputeTest, PrefixTest) {
 	// Prepare
 	parts->ComputeBins();
 

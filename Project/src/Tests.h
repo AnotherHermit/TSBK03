@@ -12,7 +12,7 @@
 #include "Particles.h"
 #include "GL_utilities.h"
 
-class ComputeTest : public ::testing::Test {
+class ComputeTest : public ::testing::TestWithParam<const int*> {
 protected:
 	Particles* parts;
 	SDL_Window* screen;
@@ -38,7 +38,7 @@ void ComputeTest::SetUp() {
 
 	ASSERT_EQ(GLEW_OK, glewInit()) << "Failed to initialize GLEW";
 
-	GLuint particlesPerSide = 100; // 52 fails
+	GLuint particlesPerSide = *GetParam(); // 52 fails (?)
 	GLfloat binSize = 20.0f;
 
 	parts = new Particles(particlesPerSide, binSize);

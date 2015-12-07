@@ -89,7 +89,7 @@ bool Program::Init() {
 	glm::vec3 cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
 	GLfloat cameraViewDistance = 500.0f;
 
-	GLuint particlesPerSide = 104;
+	GLuint particlesPerSide = 64;
 	GLfloat binSize = 20.0f;
 
 	// Set up the camera
@@ -207,10 +207,10 @@ void Program::OnKeypress(SDL_Event *Event) {
 		particleSystem->ToggleUpdate();
 		break;
 	case SDLK_1:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() - 8);
+		particleSystem->SetParticles(particleSystem->GetSetParticles() - 4);
 		break;
 	case SDLK_2:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() + 8);
+		particleSystem->SetParticles(particleSystem->GetSetParticles() + 4);
 		break;
 	case SDLK_r:
 		particleSystem->SetParticles(particleSystem->GetSetParticles());
