@@ -52,7 +52,7 @@ TEST_P(ComputePrefix, PrefixFunctionTest) {
 	// Compare to CPU based test for bins
 	GLint* resultPrefix = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[1], GL_READ_ONLY);
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
-		ASSERT_EQ(CPUBin[i], resultPrefix[i]) << "Prefix " << i << " is not correct sum.";
+		EXPECT_EQ(CPUBin[i], resultPrefix[i]) << "Prefix " << i << " is not correct sum.";
 	}
 	glUnmapNamedBuffer(parts->GetBinBuffers()[1]);
 }
@@ -63,7 +63,13 @@ TEST_P(ComputePrefix, DISABLED_PrefixSumTest) {
 	parts->ComputePrefix();
 	GPUTimer->endTimer();
 
+	CPUTimer->startTimer();
+	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
+		totalSum += CPUBin[i];
+	}
+	CPUTimer->endTimer();
+
 	GLint* resultSum = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[1], GL_READ_ONLY);
-	ASSERT_EQ(totalSum, resultSum[0]);
+	ASSERT_EQ(totalSum, resultSum[parts->GetTotalBins() - 1]);
 	glUnmapNamedBuffer(parts->GetBinBuffers()[1]);
 }

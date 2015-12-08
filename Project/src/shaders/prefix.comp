@@ -38,14 +38,33 @@ void main(void) {
 
 	barrier();
 
-	for(int s = 1; s < gl_WorkGroupSize.x; s *= 2) {
-		if (ltid % (2*s) == 0) {
-			sData[ltid] += sData[ltid + s];	
+	for(uint s = 1; s < gl_WorkGroupSize.x; s *= 2) {
+		uint ind	= 2 * s * ltid;
+		uint d		= 2 * s - 1 + ind;
+		uint k		= s - 1 + ind;
+
+		if (ind < gl_WorkGroupSize.x) {
+			sData[d] += sData[k];	
 		}
 		barrier();
 	}
 
+	if (ltid == 0) sData[gl_WorkGroupSize.x - 1] = 0;
+	barrier();
 
-	if (ltid == 0) prefixCounter[0] = sData[0];
+	for(uint s = gl_WorkGroupSize.x / 2; s > 0; s /= 2) {
+		uint ind	= 2 * s * ltid;
+		uint d		= 2 * s - 1 + ind;
+		uint k		= s - 1 + ind;
+
+		if (ind < gl_WorkGroupSize.x) {
+			uint temp = sData[k];
+			sData[k] = sData[d];
+			sData[d] += temp;	
+		}
+		barrier();
+	}
+
+	prefixCounter[ltid] = sData[ltid];
 }
 

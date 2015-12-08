@@ -180,6 +180,12 @@ GLuint compileShaders(const char *vs, const char *fs, const char *gs, const char
 		printProgramInfoLog(p, vfn, ffn, gfn, tcfn, tefn);
 	}
 
+	if (vs != NULL)		glDetachShader(p, v);
+	if (fs != NULL)		glDetachShader(p, f);
+	if (gs != NULL)		glDetachShader(p, g);
+	if (tcs != NULL)	glDetachShader(p, tc);
+	if (tes != NULL)	glDetachShader(p, te);
+
 	return p;
 }
 
@@ -243,6 +249,7 @@ GLint CompileComputeShader(GLuint* program, const char* path) {
 	glAttachShader(*program, computeShader);
 	glDeleteShader(computeShader);
 	glLinkProgram(*program);
+	glDetachShader(*program, computeShader);
 	//get errors from the program linking.
 	wasError += printProgramInfoLog(*program, path, NULL, NULL, NULL, NULL);
 

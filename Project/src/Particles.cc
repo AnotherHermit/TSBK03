@@ -177,25 +177,15 @@ void Particles::InitCompute() {
 void Particles::ComputeBins() {
 	glUseProgram(computeBin);
 	glDispatchCompute(particles / 64, 1, 1);
-	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Bin");
 }
 
 void Particles::ComputePrefix() {
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
-	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLuint) * binParam.totalBins, prefixArray);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-	GLuint sum = 0;
-	for (size_t i = 0; i < binParam.totalBins; i++) {
-		std::swap(prefixArray[i], sum);
-		sum += prefixArray[i];
-	}
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[1]);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * binParam.totalBins, prefixArray, GL_STREAM_COPY);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glUseProgram(computePrefix);
+	glDispatchCompute(particles / 64, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Prefix");
 }

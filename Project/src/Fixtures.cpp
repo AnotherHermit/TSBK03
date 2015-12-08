@@ -38,6 +38,8 @@ void ComputeTest::ExitOpenGL() {
 // ===== Bun particles =====
 
 void ComputeBin::SetUp() {
+	CPUBin = nullptr;
+
 	InitOpenGL();
 
 	GLuint particlesPerSide = *GetParam();
@@ -60,7 +62,9 @@ void ComputeBin::TearDown() {
 		std::cout << "[ GPU TIME ] " << GPUTimer->getTimeMS() << " ms" << std::endl;
 	}
 
-	delete(CPUBin);
+	if (CPUBin != nullptr) {
+		free(CPUBin);
+	}
 	delete(parts);
 
 	ExitOpenGL();
@@ -80,6 +84,8 @@ void ComputeBin::CPUSolution() {
 // ===== Prefix sum =====
 
 void ComputePrefix::SetUp() {
+	CPUBin = nullptr;
+
 	InitOpenGL();
 
 	GLuint particlesPerSide = *GetParam(); // 52 fails (?)
@@ -90,10 +96,11 @@ void ComputePrefix::SetUp() {
 
 	CPUBin = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
 
+	totalSum = 0;
+
 	srand(1);
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
 		CPUBin[i] = rand() % 30;
-		totalSum += CPUBin[i];
 	}
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, parts->GetBinBuffers()[0]); // Bin count buffer
@@ -111,7 +118,9 @@ void ComputePrefix::TearDown() {
 		std::cout << "[ GPU TIME ] " << GPUTimer->getTimeMS() << " ms" << std::endl;
 	}
 
-	delete(CPUBin);
+	if (CPUBin != nullptr) {
+		free(CPUBin);
+	}
 	delete(parts);
 
 	ExitOpenGL();
