@@ -12,10 +12,17 @@
 #include <cstdlib>
 #include <math.h>
 
+#define ELEMENTS_REDUCE_PHASE 1024
+
+GLuint Particles::MAX_BINS = 2097152; // 128*128*128 = 2048 * 1024
+GLuint Particles::MAX_PARTICLES = 4194304; // 4096 * 1024
+
 Particles::Particles(GLuint numParticles, GLfloat initBinSize) {
 	setParticles = numParticles;
 	particles = setParticles*setParticles*setParticles;
 	computeDrawParticles = 0;
+
+	numThreads = 256;
 
 	doUpdate = true;
 
@@ -24,6 +31,8 @@ Particles::Particles(GLuint numParticles, GLfloat initBinSize) {
 	binParam.binSize = initBinSize;
 	binParam.areaSize = (GLfloat)binParam.bins * binParam.binSize;
 
+	prefixWorkGroups = GLuint(ceil((float)binParam.totalBins / (float)ELEMENTS_REDUCE_PHASE));
+
 	inBufferIndex = 0;
 	outBufferIndex = 1;
 
@@ -31,14 +40,14 @@ Particles::Particles(GLuint numParticles, GLfloat initBinSize) {
 
 	//create buffers
 	glGenBuffers(3, particleBuffers);
-	glGenBuffers(2, binBuffers);
+	glGenBuffers(3, binBuffers);
 	glGenBuffers(1, &counterBuffer);
 	glGenBuffers(1, &binBuffer);
 }
 
 Particles::~Particles() {
 	glDeleteBuffers(3, particleBuffers);
-	glDeleteBuffers(2, binBuffers);
+	glDeleteBuffers(3, binBuffers);
 	glDeleteBuffers(1, &counterBuffer);
 	glDeleteBuffers(1, &binBuffer);
 
@@ -58,7 +67,9 @@ bool Particles::Init() {
 	SetParticleData();
 
 	isOk += CompileComputeShader(&computeBin, "src/shaders/bin.comp");
-	isOk += CompileComputeShader(&computePrefix, "src/shaders/prefix.comp");
+	isOk += CompileComputeShader(&computePrefixGather, "src/shaders/prefixGather.comp");
+	isOk += CompileComputeShader(&computePrefixReduce, "src/shaders/prefixReduce.comp");
+	isOk += CompileComputeShader(&computePrefixSpread, "src/shaders/prefixSpread.comp");
 	isOk += CompileComputeShader(&computeSort, "src/shaders/sort.comp");
 	isOk += CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
 	isOk += CompileComputeShader(&computeCull, "src/shaders/cull.comp");
@@ -79,6 +90,8 @@ void Particles::SetParticles(GLuint newParticles) {
 	binParam.bins = setParticles;
 	binParam.totalBins = binParam.bins*binParam.bins*binParam.bins;
 	binParam.areaSize = (GLfloat)binParam.bins * binParam.binSize;
+
+	prefixWorkGroups = (GLuint)ceil((float)binParam.totalBins / (float)ELEMENTS_REDUCE_PHASE);
 
 	free(prefixArray);
 	prefixArray = (GLuint*)malloc(sizeof(GLuint) * binParam.totalBins);
@@ -138,12 +151,17 @@ void Particles::InitCompute() {
 	printError("init particle data buffers");
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]); // Bin count buffer
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * binParam.totalBins, NULL, GL_STREAM_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * MAX_BINS, NULL, GL_STREAM_COPY);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, NULL);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[1]); // Bin prefix buffer
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * binParam.totalBins, NULL, GL_STREAM_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * MAX_BINS, NULL, GL_STREAM_COPY);
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, NULL);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[2]); // Bin prefix buffer
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * ELEMENTS_REDUCE_PHASE, NULL, GL_STREAM_COPY);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, NULL);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -160,7 +178,7 @@ void Particles::InitCompute() {
 	printError("init uniform data buffers");
 
 	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 3, particleBuffers);
-	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 3, 2, binBuffers);
+	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 3, 3, binBuffers);
 	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, counterBuffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 11, binBuffer);
 
@@ -176,15 +194,33 @@ void Particles::InitCompute() {
 
 void Particles::ComputeBins() {
 	glUseProgram(computeBin);
-	glDispatchCompute(particles / 64, 1, 1);
+	glDispatchCompute(particles / numThreads, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Bin");
 }
 
-void Particles::ComputePrefix() {
-	glUseProgram(computePrefix);
-	glDispatchCompute(particles / 64, 1, 1);
+void Particles::ComputePrefixGather() {
+	glUseProgram(computePrefixGather);
+	glDispatchCompute(prefixWorkGroups, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	printError("Do Compute: Prefix");
+}
+
+void Particles::ComputePrefixReduce() {
+
+	glUseProgram(computePrefixReduce);
+	glDispatchCompute(1, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	printError("Do Compute: Prefix");
+}
+
+void Particles::ComputePrefixSpread() {
+
+	glUseProgram(computePrefixSpread);
+	glDispatchCompute(prefixWorkGroups, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Prefix");

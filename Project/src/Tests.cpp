@@ -12,7 +12,7 @@
 INSTANTIATE_TEST_CASE_P(DifferentNumParticlesTest, ComputeBin, ::testing::Values(&NumParticles[0], &NumParticles[1], &NumParticles[2], &NumParticles[3], &NumParticles[4]));
 INSTANTIATE_TEST_CASE_P(DifferentNumParticlesTest, ComputePrefix, ::testing::Values(&NumParticles[0], &NumParticles[1], &NumParticles[2], &NumParticles[3], &NumParticles[4]));
 
-TEST_P(ComputeBin, BinFunctionTest) {
+TEST_P(ComputeBin, DISABLED_BinFunctionTest) {
 	// Run the GPU solution
 	GPUTimer->startTimer();
 	parts->ComputeBins();
@@ -38,10 +38,48 @@ TEST_P(ComputeBin, BinFunctionTest) {
 	glUnmapNamedBuffer(parts->GetBinBuffers()[0]);
 }
 
-TEST_P(ComputePrefix, PrefixFunctionTest) {
+TEST_P(ComputePrefix, PrefixGatherFunctionTest) {
 	// Run the GPU solution
 	GPUTimer->startTimer();
-	parts->ComputePrefix();
+	parts->ComputePrefixGather();
+	GPUTimer->endTimer();
+
+	// Run the check solution on CPU
+	CPUTimer->startTimer();
+	CPUSolution();
+	CPUTimer->endTimer();
+
+	// Compare to CPU based test for bins
+	GLint* resultPrefix = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[1], GL_READ_ONLY);
+	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
+		EXPECT_EQ(CPUBin[i], resultPrefix[i]) << "Prefix " << i << " is not correct sum.";
+	}
+	glUnmapNamedBuffer(parts->GetBinBuffers()[1]);
+}
+
+TEST_P(ComputePrefix, PrefixReduceFunctionTest) {
+	// Run the GPU solution
+	GPUTimer->startTimer();
+	parts->ComputePrefixReduce();
+	GPUTimer->endTimer();
+
+	// Run the check solution on CPU
+	CPUTimer->startTimer();
+	CPUSolution();
+	CPUTimer->endTimer();
+
+	// Compare to CPU based test for bins
+	GLint* resultPrefix = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[1], GL_READ_ONLY);
+	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
+		EXPECT_EQ(CPUBin[i], resultPrefix[i]) << "Prefix " << i << " is not correct sum.";
+	}
+	glUnmapNamedBuffer(parts->GetBinBuffers()[1]);
+}
+
+TEST_P(ComputePrefix, PrefixSpreadFunctionTest) {
+	// Run the GPU solution
+	GPUTimer->startTimer();
+	parts->ComputePrefixSpread();
 	GPUTimer->endTimer();
 
 	// Run the check solution on CPU
@@ -60,7 +98,9 @@ TEST_P(ComputePrefix, PrefixFunctionTest) {
 TEST_P(ComputePrefix, DISABLED_PrefixSumTest) {
 	// Run the GPU solution
 	GPUTimer->startTimer();
-	parts->ComputePrefix();
+	parts->ComputePrefixGather();
+	parts->ComputePrefixReduce();
+	parts->ComputePrefixSpread();
 	GPUTimer->endTimer();
 
 	CPUTimer->startTimer();
@@ -69,7 +109,7 @@ TEST_P(ComputePrefix, DISABLED_PrefixSumTest) {
 	}
 	CPUTimer->endTimer();
 
-	GLint* resultSum = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[1], GL_READ_ONLY);
-	ASSERT_EQ(totalSum, resultSum[parts->GetTotalBins() - 1]);
+	GLint* resultSum = (GLint*)glMapNamedBuffer(parts->GetBinBuffers()[3], GL_READ_ONLY);
+	ASSERT_EQ(totalSum, resultSum[1023]);
 	glUnmapNamedBuffer(parts->GetBinBuffers()[1]);
 }

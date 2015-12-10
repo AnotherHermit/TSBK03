@@ -1,0 +1,167 @@
+///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
+
+# version 430
+
+layout(local_size_x = 256) in;
+
+layout(std430, binding = 3) buffer BinCounterBuffer
+{
+	uvec4 binCounter[];
+};
+
+layout(std430, binding = 4) buffer PrefixCounterBuffer
+{
+	uvec4 prefixCounter[];
+};
+
+layout(std430, binding = 5) buffer PrefixTempBuffer
+{
+	uint tempCounter[];
+};
+
+#define NUM_BANKS 32
+#define LOG_NUM_BANKS 5
+
+// This should be the correct offset for no bank conflicts
+#define CONFLICT_FREE_OFFSET(n) ((n) >> LOG_NUM_BANKS)
+
+// No handling of bank conflicts
+//#define CONFLICT_FREE_OFFSET(n) 0
+
+// Nvidia GPU gems, this seems wrong (?)
+//#define CONFLICT_FREE_OFFSET(n) \
+//	((n) >> NUM_BANKS) + ((n) >> (2 * LOG_NUM_BANKS))
+
+shared uint sData[640]; // Twice the number of threads plus some room for the offsets
+
+uint temp;
+uint sum;
+uint offset;
+uint n;
+
+uint gInd1;
+uint gInd2;
+
+uint lInd1;
+uint lInd2;
+
+uint rInd1;
+uint rInd2;
+
+uint tid;
+
+uvec4 lv1;
+uvec4 lv2;
+
+void main(void)
+{
+	tid = gl_LocalInvocationIndex.x;
+	n = gl_WorkGroupSize.x * 2;
+
+	gInd1 = tid + gl_WorkGroupID.x * n;
+	gInd2 = gInd1 + gl_WorkGroupSize.x;
+
+	lInd1 = tid;
+	lInd2 = tid + gl_WorkGroupSize.x;
+
+	lInd1 += CONFLICT_FREE_OFFSET(lInd1);
+	lInd2 += CONFLICT_FREE_OFFSET(lInd2);
+
+	// Read 8 floats (2 * vec4) and do local prefix sum and store in shared memory
+	sum = 0;
+	lv1 = binCounter[gInd1];
+	
+	temp = lv1.x;
+	lv1.x = sum;
+	sum += temp;
+
+	temp = lv1.y;
+	lv1.y = sum;
+	sum += temp;
+
+	temp = lv1.z;
+	lv1.z = sum;
+	sum += temp;
+
+	temp = lv1.w;
+	lv1.w = sum;
+	sum += temp;
+
+	sData[lInd1] = sum;
+
+	sum = 0;
+	lv2 = binCounter[gInd2];
+
+	temp = lv2.x;
+	lv2.x = sum;
+	sum += temp;
+
+	temp = lv2.y;
+	lv2.y = sum;
+	sum += temp;
+
+	temp = lv2.z;
+	lv2.z = sum;
+	sum += temp;
+
+	temp = lv2.w;
+	lv2.w = sum;
+	sum += temp;
+
+	sData[lInd2] = sum;	
+
+	// Up-sweep phase to reduce to single sum
+	offset = 1;
+	for (uint d = n>>1; d > 0; d >>= 1)
+	{
+		barrier();
+		if (tid < d)
+		{
+			rInd1 = offset * (2 * tid + 1) - 1;
+			rInd2 = rInd1 + offset;
+			rInd1 += CONFLICT_FREE_OFFSET(rInd1);
+			rInd2 += CONFLICT_FREE_OFFSET(rInd2);
+
+			sData[rInd2] += sData[rInd1];
+		}
+		offset *= 2;	
+	}
+
+	// Set biggest sum to 0, since we want the prefix sum to start at 0
+	if (tid == 0) {
+		tempCounter[gl_WorkGroupID.x] = sData[(n - 1) + CONFLICT_FREE_OFFSET(n - 1)];
+		sData[(n - 1) + CONFLICT_FREE_OFFSET(n - 1)] = 0;	
+	}
+	
+	// Down-sweep phase to spread the sums
+	for (uint d = 1; d < n; d *= 2)
+	{
+		barrier();
+		offset >>= 1;
+		if (tid < d)
+		{
+			rInd1 = offset * (2 * tid + 1) - 1;
+			rInd2 = rInd1 + offset;
+			rInd1 += CONFLICT_FREE_OFFSET(rInd1);
+			rInd2 += CONFLICT_FREE_OFFSET(rInd2);
+
+			temp = sData[rInd1];
+			sData[rInd1] = sData[rInd2];
+			sData[rInd2] += temp;
+		}
+	}
+
+	barrier();
+	
+	lv1 += sData[lInd1];
+	prefixCounter[gInd1] = lv1;
+
+	lv2 += sData[lInd2];
+	prefixCounter[gInd2] = lv2;
+}
+

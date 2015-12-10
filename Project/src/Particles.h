@@ -47,22 +47,31 @@ private:
 	// Methods
 	void SetParticleData();
 
+	// Compute shader threads
+	GLuint numThreads;
+
 	// Compute shader stuff
-	GLuint particleBuffers[3], binBuffers[2], counterBuffer;
-	GLuint computeBin, computePrefix, computeSort, computeUpdate, computeCull;
+	GLuint particleBuffers[3], binBuffers[3], counterBuffer;
+	GLuint computeBin, computePrefixGather, computePrefixReduce, computePrefixSpread, computeSort, computeUpdate, computeCull;
 	GLuint computeDrawParticles;
 	GLuint inBufferIndex, outBufferIndex;
+	GLuint prefixWorkGroups;
 	void InitCompute();
 
 public:
 	Particles(GLuint numParticles, GLfloat initBinSize);
 	~Particles();
 
+	static GLuint MAX_PARTICLES;
+	static GLuint MAX_BINS;
+
 	bool Init();
 	void DoCompute();
 
 	void ComputeBins();
-	void ComputePrefix();
+	void ComputePrefixGather();
+	void ComputePrefixReduce();
+	void ComputePrefixSpread();
 	void ComputeSort();
 	void ComputeUpdate();
 	void ComputeCull();

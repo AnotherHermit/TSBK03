@@ -97,8 +97,8 @@ void ComputePrefix::SetUp() {
 	CPUBin = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
 
 	totalSum = 0;
-
-	srand(1);
+	
+	srand(time(NULL));
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
 		CPUBin[i] = rand() % 30;
 	}

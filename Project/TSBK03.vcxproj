@@ -352,7 +352,6 @@
     <ClInclude Include="src\common\LoadTGA.h" />
     <ClInclude Include="src\common\Windows\glew.h" />
     <ClInclude Include="src\common\Windows\wglew.h" />
-    <ClInclude Include="src\Ideas and TODO.txt" />
     <ClInclude Include="src\Drawable.h" />
     <ClInclude Include="src\Particles.h" />
     <ClInclude Include="src\Program.h" />
@@ -369,11 +368,16 @@
     <None Include="src\shaders\culling.vert" />
     <None Include="src\shaders\particle.frag" />
     <None Include="src\shaders\particle.vert" />
-    <None Include="src\shaders\prefix.comp" />
+    <None Include="src\shaders\prefixGather.comp" />
+    <None Include="src\shaders\prefixReduce.comp" />
+    <None Include="src\shaders\prefixSpread.comp" />
     <None Include="src\shaders\sort.comp" />
     <None Include="src\shaders\update.comp" />
     <None Include="src\shaders\update.vert" />
     <None Include="src\shaders\update2.comp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="resources\Ideas and TODO.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
