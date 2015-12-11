@@ -39,7 +39,6 @@ private:
 	// Bin info
 	BinStruct binParam;
 	GLuint binBuffer;
-	GLuint *prefixArray;
 
 	// Others
 	bool doUpdate;

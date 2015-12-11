@@ -36,8 +36,6 @@ Particles::Particles(GLuint numParticles, GLfloat initBinSize) {
 	inBufferIndex = 0;
 	outBufferIndex = 1;
 
-	prefixArray = (GLuint*)malloc(sizeof(GLuint) * binParam.totalBins);
-
 	//create buffers
 	glGenBuffers(3, particleBuffers);
 	glGenBuffers(3, binBuffers);
@@ -55,12 +53,10 @@ Particles::~Particles() {
 	glDeleteProgram(computeSort);
 	glDeleteProgram(computeUpdate);
 	glDeleteProgram(computeCull);
-
-	free(prefixArray);
 }
 
 bool Particles::Init() {
-	srand(1);
+	srand((GLuint)time(NULL));
 
 	GLint isOk = 0;
 
@@ -92,9 +88,6 @@ void Particles::SetParticles(GLuint newParticles) {
 	binParam.areaSize = (GLfloat)binParam.bins * binParam.binSize;
 
 	prefixWorkGroups = (GLuint)ceil((float)binParam.totalBins / (float)ELEMENTS_REDUCE_PHASE);
-
-	free(prefixArray);
-	prefixArray = (GLuint*)malloc(sizeof(GLuint) * binParam.totalBins);
 
 	SetParticleData();
 	InitCompute();
@@ -279,11 +272,11 @@ void Particles::ComputeCull() {
 }
 
 void Particles::DoCompute() {
-	//ComputeBins();
-	//ComputePrefixGather();
-	//ComputePrefixReduce();
-	//ComputePrefixSpread();
-	//ComputeSort();
+	ComputeBins();
+	ComputePrefixGather();
+	ComputePrefixReduce();
+	ComputePrefixSpread();
+	ComputeSort();
 	ComputeUpdate();
 	ComputeCull();
 }

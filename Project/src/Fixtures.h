@@ -40,8 +40,10 @@ protected:
 	Particles* parts;
 
 	GLint* CPUBin;
+	GLint* CPUPrefix;
 	
 	virtual void CPUSolution();
+	void CPUSolutionPrefix();
 
 public:
 	ComputeBin() {};
@@ -56,9 +58,13 @@ protected:
 	Particles* parts;
 
 	GLint* CPUBin;
+	GLint* TempBin;
 	GLint totalSum;
 
 	virtual void CPUSolution();
+	void CPUSolutionGather();
+	void CPUSolutionReduce();
+	void CPUSolutionSpread();
 
 public:
 	ComputePrefix() {};

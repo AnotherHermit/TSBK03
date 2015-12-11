@@ -54,18 +54,21 @@ void ComputeBin::SetUp() {
 	memset(CPUBin, 0, sizeof(GLint) * parts->GetTotalBins());
 	//count = 0;
 
+	CPUPrefix = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
+	memset(CPUPrefix, 0, sizeof(GLint) * parts->GetTotalBins());
+
 	glFinish();
 }
 
 void ComputeBin::TearDown() {
 	if (CPUTimer != nullptr) {
-		std::cout << "[ CPU TIME ] " << CPUTimer->getTimeMS() << " ms" << std::endl;
+		std::cout << "[ CPU TIME ]" << CPUTimer->getTimeMS() << " ms" << std::endl;
 	}
 	
 	//count++;
 	
 	if (GPUTimer != nullptr) {
-		std::cout << "[ GPU TIME ] " << GPUTimer->getTimeMS() << " ms" << std::endl;
+		std::cout << "[ GPU TIME ]" << GPUTimer->getTimeMS() << " ms" << std::endl;
 	}
 
 	if (CPUBin != nullptr) {
@@ -86,12 +89,21 @@ void ComputeBin::CPUSolution() {
 	}
 }
 
+void ComputeBin::CPUSolutionPrefix() {
+	CPUSolution();
+
+	GLint sum = 0;
+	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
+		CPUPrefix[i] = sum;
+		sum += CPUBin[i];
+	}
+}
 
 // ===== Prefix sum =====
 
 void ComputePrefix::SetUp() {
 	CPUBin = nullptr;
-
+	TempBin = nullptr;
 	InitOpenGL();
 
 	GLuint particlesPerSide = *GetParam(); // 52 fails (?)
@@ -101,10 +113,13 @@ void ComputePrefix::SetUp() {
 	ASSERT_TRUE(parts->Init());
 
 	CPUBin = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
+	TempBin = (GLint*)malloc(sizeof(GLint) * 1024);
+	memset(TempBin, 0, sizeof(GLint) * 1024);
+
 
 	totalSum = 0;
 	
-	srand(time(NULL));
+	srand((GLuint)time(NULL));
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
 		CPUBin[i] = rand() % 30;
 	}
@@ -127,10 +142,45 @@ void ComputePrefix::TearDown() {
 	if (CPUBin != nullptr) {
 		free(CPUBin);
 	}
+	if (TempBin != nullptr) {
+		free(TempBin);
+	}
+
 	delete(parts);
 
 	ExitOpenGL();
 }
+
+
+void ComputePrefix::CPUSolutionGather() {
+	GLint sum;
+	GLuint offset = parts->GetTotalBins() / 1024;
+	for (size_t i = 0; i < 1024; i++) {
+		sum = 0;
+		for (size_t j = 0; j < offset; j++) {
+			std::swap(CPUBin[j + offset * i], sum);
+			sum += CPUBin[j + offset * i];
+		}
+		TempBin[i] = sum;
+	}
+}
+
+void ComputePrefix::CPUSolutionReduce() {
+	GLint sum = 0;
+	for (size_t i = 0; i < 1024; i++) {
+		std::swap(TempBin[i], sum);
+		sum += TempBin[i];
+	}
+}
+
+void ComputePrefix::CPUSolutionSpread() {
+	GLint sum = 0;
+	for (size_t i = 0; i < 1024; i++) {
+		std::swap(TempBin[i], sum);
+		sum += TempBin[i];
+	}
+}
+
 
 void ComputePrefix::CPUSolution() {
 	GLint sum = 0;
