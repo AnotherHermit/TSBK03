@@ -17,7 +17,9 @@ void ComputeTest::InitOpenGL() {
 	ASSERT_FALSE(screen == 0);
 	glcontext = SDL_GL_CreateContext(screen);
 
+#ifdef _WINDOWS
 	ASSERT_EQ(GLEW_OK, glewInit()) << "Failed to initialize GLEW";
+#endif
 
 	CPUTimer = new Timer();
 	GPUTimer = new GLTimer();
@@ -50,6 +52,7 @@ void ComputeBin::SetUp() {
 
 	CPUBin = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
 	memset(CPUBin, 0, sizeof(GLint) * parts->GetTotalBins());
+	//count = 0;
 
 	glFinish();
 }
@@ -58,6 +61,9 @@ void ComputeBin::TearDown() {
 	if (CPUTimer != nullptr) {
 		std::cout << "[ CPU TIME ] " << CPUTimer->getTimeMS() << " ms" << std::endl;
 	}
+	
+	//count++;
+	
 	if (GPUTimer != nullptr) {
 		std::cout << "[ GPU TIME ] " << GPUTimer->getTimeMS() << " ms" << std::endl;
 	}

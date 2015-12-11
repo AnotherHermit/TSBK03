@@ -7,17 +7,18 @@ ifeq ($(shell uname), Linux)
 endif
 $SOURCEDIR = src
 
-CPP_FILES := $(wildcard src/*.cc)
+CC_FILES := $(wildcard src/*.cc)
 
-OBJ_FILES_CPP := $(addprefix obj/,$(notdir $(CPP_FILES:.cc=.o)))
+OBJ_FILES_CC := $(addprefix obj/,$(notdir $(CC_FILES:.cc=.o)))
 
-CPP_FILES_COMMON := $(wildcard src/common/*.cc)
+CC_FILES_COMMON := $(wildcard src/common/*.cc)
 
-OBJ_FILES_COMMON += $(addprefix obj/,$(notdir $(CPP_FILES_COMMON:.cc=.o)))
+OBJ_FILES_COMMON += $(addprefix obj/,$(notdir $(CC_FILES_COMMON:.cc=.o)))
 
-INC = -Isrc/ -Isrc/common/ -Isrc/common/glm -Isrc/common/AntTweak
+INC = -Isrc/ -Isrc/common/ -Isrc/common/glm -Isrc/common/AntTweak -Isrc/common/GoogleTest
 MAIN = main.cc
 OUT = bin/GPUFlocking
+OUT_TEST = bin/tests
 
 ifeq ($(PLATFORM),mac)
 INC += -F/Library/Frameworks/
@@ -30,15 +31,18 @@ GCC = g++ -Wall -pedantic -std=c++0x
 ifeq ($(PLATFORM),linux)
 INC += $(shell pkg-config --cflags sdl2)
 LINKS = $(shell pkg-config --libs sdl2)
-LINKS += -lGL -lGLU -lglut -lm -lXt -lX11 -Wl,-rpath,./lib/AntTweakLinux -Llib/AntTweakLinux -lAntTweakBar  
-GCC += -std=gnu++0x -Dnullptr=NULL
+LINKS += -lGL -lGLU -lglut -lm -lXt -lX11 -Wl,-rpath,./lib/AntTweakLinux -Llib/AntTweakLinux -Llib/GoogleTest/Linux -lAntTweakBar -lgtest_main
+GCC += -std=gnu++0x -Dnullptr=NULL  -g3
 endif
 
 
-
-all: $(OBJ_FILES_COMMON) $(OBJ_FILES_CPP)
+all: $(OBJ_FILES_COMMON) $(OBJ_FILES_CC)
 	mkdir -p $(CURDIR)/bin
 	$(GCC) obj/*.o $(MAIN) -o $(OUT) $(INC) $(LINKS)
+
+test: $(OBJ_FILES_COMMON) $(OBJ_FILES_CC)
+	mkdir -p $(CURDIR)/bin
+	$(GCC) obj/*.o $(MAIN) -o $(OUT_TEST) $(INC) $(LINKS) -D_TEST
 
 obj/%.o : src/common/%.cc
 	mkdir -p $(CURDIR)/obj
@@ -48,8 +52,7 @@ obj/%.o : src/%.cc
 	mkdir -p $(CURDIR)/obj
 	$(GCC) -c -o $@ $< $(INC)
 
-TWtest:
-	$(GCC) TwSimpleSDL.c -o $(OUT) $(INC) $(LINKS)
+
 
 clean :
 	rm obj/*.o

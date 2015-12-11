@@ -8,11 +8,11 @@
 #ifndef FIXTURES_H
 #define FIXTURES_H
 
+#include <gtest/gtest.h>
+
 #include "Particles.h"
 
 #include "GL_utilities.h"
-
-#include <gtest/gtest.h>
 
 #include <vector>
 
@@ -23,6 +23,8 @@ protected:
 
 	Timer* CPUTimer;
 	GLTimer* GPUTimer;
+
+	//int count;
 
 	void InitOpenGL();
 	void ExitOpenGL();

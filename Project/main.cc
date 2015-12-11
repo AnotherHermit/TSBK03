@@ -24,10 +24,11 @@ int main(int argc, char *argv[])
 // ==== Main Program ====
 int main(int argc, char *argv[]) {
 	testing::InitGoogleTest(&argc, argv);
-	RUN_ALL_TESTS();
+	int result = RUN_ALL_TESTS();
 
 	printf("Press enter to quit...");
 	getchar();
+	return result;
 }
 
 #endif
