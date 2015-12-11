@@ -50,12 +50,11 @@ void ComputeBin::SetUp() {
 	parts = new Particles(particlesPerSide, binSize);
 	ASSERT_TRUE(parts->Init());
 
-	CPUBin = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
-	memset(CPUBin, 0, sizeof(GLint) * parts->GetTotalBins());
-	//count = 0;
+	CPUBin = (GLint*)malloc(sizeof(GLint) * Particles::MAX_BINS);
+	memset(CPUBin, 0, sizeof(GLint) * Particles::MAX_BINS);
 
-	CPUPrefix = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
-	memset(CPUPrefix, 0, sizeof(GLint) * parts->GetTotalBins());
+	CPUPrefix = (GLint*)malloc(sizeof(GLint) * Particles::MAX_BINS);
+	memset(CPUPrefix, 0, sizeof(GLint) * Particles::MAX_BINS);
 
 	glFinish();
 }
@@ -64,9 +63,6 @@ void ComputeBin::TearDown() {
 	if (CPUTimer != nullptr) {
 		std::cout << "[ CPU TIME ]" << CPUTimer->getTimeMS() << " ms" << std::endl;
 	}
-	
-	//count++;
-	
 	if (GPUTimer != nullptr) {
 		std::cout << "[ GPU TIME ]" << GPUTimer->getTimeMS() << " ms" << std::endl;
 	}
@@ -80,12 +76,15 @@ void ComputeBin::TearDown() {
 }
 
 void ComputeBin::CPUSolution() {
-	for (size_t i = 0; i < parts->GetParticles(); i++) {
-		glm::vec3 pos = parts->GetParticleData()[i].position / 20.0f;
-		GLuint bin = (GLuint)floor(pos.x) + (GLuint)floor(pos.y) * parts->GetBins() + (GLuint)floor(pos.z) * parts->GetBins() * parts->GetBins();
+	glm::vec3 pos;
+	GLuint bin;
 
-		CPUBin[bin]++;
+	for (size_t i = 0; i < parts->GetParticles(); i++) {
+		pos = parts->GetParticleData()[i].position / 20.0f;
+		bin = (GLuint)floor(pos.x) + (GLuint)floor(pos.y) * parts->GetBins() + (GLuint)floor(pos.z) * parts->GetBins() * parts->GetBins();
+		
 		parts->GetParticleData()[i].bin = bin;
+		CPUBin[bin]++;
 	}
 }
 
@@ -106,13 +105,14 @@ void ComputePrefix::SetUp() {
 	TempBin = nullptr;
 	InitOpenGL();
 
-	GLuint particlesPerSide = *GetParam(); // 52 fails (?)
+	GLuint particlesPerSide = *GetParam();
 	GLfloat binSize = 20.0f;
 
 	parts = new Particles(particlesPerSide, binSize);
 	ASSERT_TRUE(parts->Init());
 
-	CPUBin = (GLint*)malloc(sizeof(GLint) * parts->GetTotalBins());
+	CPUBin = (GLint*)malloc(sizeof(GLint) * Particles::MAX_BINS);
+	memset(CPUBin, 0, sizeof(GLint) * Particles::MAX_BINS);
 	TempBin = (GLint*)malloc(sizeof(GLint) * 1024);
 	memset(TempBin, 0, sizeof(GLint) * 1024);
 
@@ -154,7 +154,7 @@ void ComputePrefix::TearDown() {
 
 void ComputePrefix::CPUSolutionGather() {
 	GLint sum;
-	GLuint offset = parts->GetTotalBins() / 1024;
+	GLuint offset = 2048;
 	for (size_t i = 0; i < 1024; i++) {
 		sum = 0;
 		for (size_t j = 0; j < offset; j++) {

@@ -331,17 +331,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cc" />
-    <ClCompile Include="src\Boid.cpp" />
+    <ClCompile Include="src\Boid.cc" />
     <ClCompile Include="src\Camera.cc" />
     <ClCompile Include="src\common\GL_utilities.cc" />
     <ClCompile Include="src\common\loadobj.cc" />
     <ClCompile Include="src\common\LoadTGA.cc" />
     <ClCompile Include="src\common\Windows\glew.c" />
-    <ClCompile Include="src\Drawable.cc" />
+    <ClCompile Include="src\Fixtures.cc" />
+    <ClCompile Include="src\myDrawable.cc" />
     <ClCompile Include="src\Particles.cc" />
     <ClCompile Include="src\Program.cc" />
-    <ClCompile Include="src\Fixtures.cpp" />
-    <ClCompile Include="src\Tests.cpp" />
+    <ClCompile Include="src\Tests.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Boid.h" />
@@ -352,7 +352,7 @@
     <ClInclude Include="src\common\LoadTGA.h" />
     <ClInclude Include="src\common\Windows\glew.h" />
     <ClInclude Include="src\common\Windows\wglew.h" />
-    <ClInclude Include="src\Drawable.h" />
+    <ClInclude Include="src\myDrawable.h" />
     <ClInclude Include="src\Particles.h" />
     <ClInclude Include="src\Program.h" />
     <ClInclude Include="src\Fixtures.h" />

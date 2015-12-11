@@ -24,8 +24,6 @@ protected:
 	Timer* CPUTimer;
 	GLTimer* GPUTimer;
 
-	//int count;
-
 	void InitOpenGL();
 	void ExitOpenGL();
 
@@ -41,7 +39,7 @@ protected:
 
 	GLint* CPUBin;
 	GLint* CPUPrefix;
-	
+
 	virtual void CPUSolution();
 	void CPUSolutionPrefix();
 

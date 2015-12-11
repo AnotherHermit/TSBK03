@@ -27,7 +27,7 @@ layout (std430, binding = 0) buffer ParticleBuffer {
 	Particle particles[];
 };
 
-layout (std430, binding = 3) buffer BinCounterBuffer {
+layout (std430, binding = 3) coherent buffer BinCounterBuffer {
 	uint binCounter[];
 };
 
