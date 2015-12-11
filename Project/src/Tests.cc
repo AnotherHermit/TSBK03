@@ -61,7 +61,7 @@ TEST_P(ComputeBin, BinPrefixTest) {
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
 		ASSERT_EQ(CPUPrefix[i], resultPrefix[i]) << "Prefix " << i << " is not correct sum.";
 	}
-	glUnmapBuffer(parts->GetBinBuffers()[1]);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
@@ -129,7 +129,7 @@ TEST_P(ComputePrefix, PrefixGatherFunctionTest) {
 	for (size_t i = 0; i < 1024; i++) {
 		ASSERT_EQ(TempBin[i], resultTemp[i]) << "Temp Prefix " << i << " is not correct sum.";
 	}
-	glUnmapNamedBuffer(parts->GetBinBuffers()[2]);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
 	// Compare to CPU based test for bins
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, parts->GetBinBuffers()[1]);
@@ -137,7 +137,7 @@ TEST_P(ComputePrefix, PrefixGatherFunctionTest) {
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
 		ASSERT_EQ(CPUBin[i], resultPrefix[i]) << "Sum Prefix " << i << " is not correct sum.";
 	}
-	glUnmapBuffer(parts->GetBinBuffers()[1]);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 
@@ -165,7 +165,7 @@ TEST_P(ComputePrefix, PrefixReduceFunctionTest) {
 	for (size_t i = 0; i < 1024; i++) {
 		ASSERT_EQ(TempBin[i], resultTemp[i]) << "Temp Prefix " << i << " is not correct sum.";
 	}
-	glUnmapBuffer(parts->GetBinBuffers()[1]);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
@@ -192,7 +192,7 @@ TEST_P(ComputePrefix, PrefixSpreadFunctionTest) {
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
 		ASSERT_EQ(CPUBin[i], resultPrefix[i]) << "Prefix " << i << " is not correct sum.";
 	}
-	glUnmapBuffer(parts->GetBinBuffers()[1]);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
@@ -216,7 +216,7 @@ TEST_P(ComputePrefix, PrefixSumTest) {
 	for (size_t i = 0; i < parts->GetTotalBins(); i++) {
 		ASSERT_EQ(CPUBin[i], resultPrefix[i]) << "Prefix " << i << " is not correct sum.";
 	}
-	glUnmapBuffer(parts->GetBinBuffers()[1]);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
