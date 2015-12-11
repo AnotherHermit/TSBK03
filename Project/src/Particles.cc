@@ -24,7 +24,7 @@ Particles::Particles(GLuint numParticles, GLfloat initBinSize) {
 
 	numThreads = 256;
 
-	doUpdate = true;
+	doUpdate = false;
 
 	binParam.bins = setParticles;
 	binParam.totalBins = binParam.bins*binParam.bins*binParam.bins;
@@ -109,9 +109,9 @@ void Particles::SetParticleData() {
 		for (unsigned int j = 0; j < setParticles; ++j) {
 			for (unsigned int k = 0; k < setParticles; ++k) {
 				// Generate positions
-				particleData[ind].position.x = fmod((float)rand(), binParam.areaSize); // X
-				particleData[ind].position.y = fmod((float)rand(), binParam.areaSize); // Y
-				particleData[ind].position.z = fmod((float)rand(), binParam.areaSize); // Z
+				particleData[ind].position.x = fmod((float)rand() / (float)RAND_MAX * (float)binParam.totalBins, binParam.areaSize); // X
+				particleData[ind].position.y = fmod((float)rand() / (float)RAND_MAX * (float)binParam.totalBins, binParam.areaSize); // Y
+				particleData[ind].position.z = fmod((float)rand() / (float)RAND_MAX * (float)binParam.totalBins, binParam.areaSize); // Z
 
 				// Initiate cell
 				particleData[ind].bin = 0;
@@ -251,7 +251,7 @@ void Particles::ComputeUpdate() {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, NULL);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	//glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Update");
 }
@@ -279,9 +279,11 @@ void Particles::ComputeCull() {
 }
 
 void Particles::DoCompute() {
-	ComputeBins();
-	ComputePrefix();
-	ComputeSort();
+	//ComputeBins();
+	//ComputePrefixGather();
+	//ComputePrefixReduce();
+	//ComputePrefixSpread();
+	//ComputeSort();
 	ComputeUpdate();
 	ComputeCull();
 }

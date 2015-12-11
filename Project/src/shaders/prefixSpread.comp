@@ -10,7 +10,7 @@
 layout(local_size_x = 256) in;
 
 layout (std430, binding = 4) buffer PrefixCounterBuffer {
-	vec4 prefixCounter[];
+	uvec4 prefixCounter[];
 };
 
 layout(std430, binding = 5) buffer PrefixTempBuffer

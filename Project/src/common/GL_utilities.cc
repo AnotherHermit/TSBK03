@@ -531,11 +531,11 @@ Timer::Timer() {
 }
 
 void Timer::startTimer() {
-	startTime = Time::now();
+	startTime = myTime::now();
 }
 
 void Timer::endTimer() {
-	GLfloat tempTime = fsec(Time::now() - startTime).count();
+	GLfloat tempTime = fsec(myTime::now() - startTime).count();
 	lapTime = tempTime - time;
 	time = tempTime;
 }

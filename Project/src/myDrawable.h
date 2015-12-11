@@ -5,8 +5,8 @@
 //
 ///////////////////////////////////////
 
-#ifndef DRAWABLE_H
-#define DRAWABLE_H
+#ifndef myDrawable_H
+#define myDrawable_H
 
 #include "Camera.h"
 
@@ -14,19 +14,19 @@
 
 #include "glm.hpp"
 
-// ===== Drawable base class ===== \\
+// ===== myDrawable base class =====
 
-class Drawable {
+class myDrawable {
 public:
-	Drawable() {}
+	myDrawable() {}
 	
 	virtual bool Init(GLuint buffer) = 0;
 	virtual void Draw(GLuint num) = 0;
 };
 
-// ===== Sphere class ===== \\
+// ===== Sphere class =====
 
-class Sphere : public Drawable {
+class Sphere : public myDrawable {
 private:
 	GLuint program, cullBuffer;
 	Model* model;
@@ -38,9 +38,9 @@ public:
 	virtual void Draw(GLuint num);
 };
 
-// ===== Billboard class ===== \\
+// ===== Billboard class =====
 
-class Billboard : public Drawable {
+class Billboard : public myDrawable {
 private:
 	GLuint program, texID, vao, cullBuffer;
 
@@ -51,4 +51,4 @@ public:
 	virtual void Draw(GLuint num);
 };
 
-#endif // DRAWABLE_H
+#endif // myDrawable_H

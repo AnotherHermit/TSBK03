@@ -72,11 +72,13 @@ bool Program::Init() {
 	glcontext = SDL_GL_CreateContext(screen);
 	SDL_SetRelativeMouseMode(SDL_FALSE);
 	
+#ifdef _WINDOWS
 	GLenum err = glewInit();
 	if (err != GLEW_OK) {
 		std::cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << std::endl;
 		return false;
 	}
+#endif
 
 	dumpInfo();
 

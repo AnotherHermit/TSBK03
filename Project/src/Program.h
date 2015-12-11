@@ -60,7 +60,7 @@ private:
 	TwBar *antBar;
 
 	// Drawing stuff
-	Drawable *model, *billboard;
+	myDrawable *model, *billboard;
 
 	void ToggleDrawModels() { renderModels = !renderModels; }
 

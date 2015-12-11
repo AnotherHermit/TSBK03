@@ -5,7 +5,7 @@
 //
 ///////////////////////////////////////
 
-#include "Drawable.h"
+#include "myDrawable.h"
 
 #include "LoadTGA.h"
 #include "GL_utilities.h"
@@ -14,7 +14,7 @@
 #include "gtx/transform.hpp"
 
 Sphere::Sphere()
-	: Drawable() {
+	: myDrawable() {
 	program = -1;
 	model = nullptr;
 }

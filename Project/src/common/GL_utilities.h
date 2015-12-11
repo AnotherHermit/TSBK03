@@ -20,7 +20,7 @@
 
 #include <chrono>
 
-typedef std::chrono::high_resolution_clock Time;
+typedef std::chrono::high_resolution_clock myTime;
 typedef std::chrono::duration<float> fsec;
 
 char* readFile(const char *file);
@@ -86,7 +86,7 @@ public:
 	GLfloat getTimeMS();
 
 private:
-	Time::time_point startTime;
+	myTime::time_point startTime;
 	GLfloat lapTime, time;
 };
 
