@@ -34,14 +34,18 @@ layout (std430, binding = 4) readonly buffer PrefixSumBuffer {
 	uint prefixSum[];
 };
 
+Particle tempParticle;
+
+uint bin;
+uint outIndex;
+
 void main() {
     uint currentParticle = gl_GlobalInvocationID.x;
-	uint bin = particlesIn[currentParticle].bin;
-	uint count = atomicAdd(binCounter[bin], 1);
-	uint outIndex = prefixSum[bin] + count;
+	
+	tempParticle = particlesIn[currentParticle];
+		
+	bin = tempParticle.bin;
+	uint outIndex = prefixSum[bin] + atomicAdd(binCounter[bin], 1);
 
-	particlesOut[outIndex].position = particlesIn[currentParticle].position;
-	particlesOut[outIndex].bin = bin;
-	particlesOut[outIndex].velocity = particlesIn[currentParticle].velocity;
-	particlesOut[outIndex].ID = particlesIn[currentParticle].ID;
+	particlesOut[outIndex] = tempParticle;
 }
