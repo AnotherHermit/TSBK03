@@ -25,8 +25,11 @@
 #	endif
 #endif
 
+
 #include "glm.hpp"
 #include "gtc/type_ptr.hpp"
+
+#include "AntTweakBar.h"
 
 #include <vector>
 
@@ -57,12 +60,15 @@ private:
 
 	CameraParam param;
 
+	TwStructMember cameraTwMembers[7];
+	TwType cameraTwStruct;
+
 	void UpdateCullingBox();
 	void Update();
 	void UploadParams();
 
 public:
-	Camera(glm::vec3 startpos, GLint *screenWidth, GLint *screenHeight, glm::vec4 lodLevels);
+	Camera(glm::vec3 startpos, GLint *screenWidth, GLint *screenHeight, glm::vec4 inLodLevels);
 	void SetFrustum();
 	void ResetCamera(glm::vec3 pos);
 
@@ -75,16 +81,11 @@ public:
 
 	void TogglePause() { isPaused = !isPaused; }
 
-	const glm::vec3 GetPos() { return param.position; }
-	const glm::vec3 GetHeading() { return heading; }
-	const glm::vec3 GetSide() { return side; }
-	const glm::vec3 GetUp() { return up; }
+	GLfloat* GetSpeedPtr() { return &mspeed; }
+	GLfloat* GetRotSpeedPtr() { return &rspeed; }
 
-	GLfloat* SpeedPtr() { return &mspeed; }
-	GLfloat* HeadingPtr() { return glm::value_ptr(heading); }
-	GLfloat* PosPtr() { return glm::value_ptr(param.position); }
-	GLfloat* PhiPtr() { return &phi; }
-	GLfloat* ThetaPtr() { return &theta; }
+	TwType GetCameraTwType() { return cameraTwStruct; }
+	CameraParam* GetCameraStructPtr() { return &param; }
 };
 
 #endif // CAMERA_H

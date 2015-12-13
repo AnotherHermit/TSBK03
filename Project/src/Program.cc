@@ -79,14 +79,20 @@ bool Program::Init() {
 	}
 #endif
 
+	dumpInfo();
+
+	printError("after wrapper inits");
+
 	// Set up the AntBar
 	TwInit(TW_OPENGL_CORE, NULL);
 	TwWindowSize(winWidth, winWidth);
 	antBar = TwNewBar("Particles");
+	TwDefine(" Particles refresh=0.1 ");
+	TwDefine(" Particles size='270 350' ");
+	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, " group=Info ");
+	TwAddVarRW(antBar, "Sim Speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls  ");
 
-	dumpInfo();
-
-	printError("after wrapper inits");
+	printError("after AntBar init");
 
 	// Set program parameters
 	param.radius = 1.0f;
@@ -129,27 +135,16 @@ bool Program::Init() {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	printError("after setting program params");
+	
+	
 
-	TwDefine(" Particles refresh=0.1 ");
-	TwDefine(" Particles size='270 350' ");
+	TwAddVarRW(antBar, "Cam Speed", TW_TYPE_FLOAT, cam->GetSpeedPtr(), " min=0 max=200 step=10 group=Controls ");
+	TwAddVarRW(antBar, "Cam Rot Speed", TW_TYPE_FLOAT, cam->GetRotSpeedPtr(), " min=0.0 max=0.010 step=0.001 group=Controls ");
+	TwAddVarRW(antBar, "Camera", cam->GetCameraTwType(), cam->GetCameraStructPtr(), " opened=true ");
 
-	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, " group=Info ");
-	TwAddVarRO(antBar, "Total Particles", TW_TYPE_INT32, particleSystem->GetParticlesPtr(), " group=Info ");
-	TwAddVarRO(antBar, "Rendered Particles", TW_TYPE_INT32, particleSystem->GetDrawParticlesPtr(), " group=Info ");
+	TwAddVarRW(antBar, "Boids", boid->GetBoidTwType(), boid->GetBoidStructPtr(), " opened=true " );
 
-	TwAddVarRO(antBar, "Camera X", TW_TYPE_FLOAT, cam->PosPtr(), " group=CameraInfo ");
-	TwAddVarRO(antBar, "Camera Y", TW_TYPE_FLOAT, cam->PosPtr() + 1, " group=CameraInfo ");
-	TwAddVarRO(antBar, "Camera Z", TW_TYPE_FLOAT, cam->PosPtr() + 2, " group= CameraInfo ");
-	TwAddVarRO(antBar, "Horizontal view", TW_TYPE_FLOAT, cam->PhiPtr(), " group=CameraInfo ");
-	TwAddVarRO(antBar, "Vertical view", TW_TYPE_FLOAT, cam->ThetaPtr(), " group=CameraInfo ");
-
-	TwAddVarRW(antBar, "Camera Speed", TW_TYPE_FLOAT, cam->SpeedPtr(), " min=0 max=200 step=10 group=Controls ");
-	//TwAddVarRW(antBar, "View Distance", TW_TYPE_FLOAT, cam->ViewDistancePtr(), " min=0 max=2000 step=100 group=Controls ");
-	TwAddVarRW(antBar, "Simulation speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls ");
-
-	TwAddVarRW(antBar, "Boids", boid->GetBoidTwType(), boid->GetBoidStructPtr(), NULL);
-
-	printError("after AntBar init");
+	TwDefine(" Particles/BoidControls group=Controls");
 
 	return true;
 }

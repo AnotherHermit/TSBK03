@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, glm::vec4 lodLevels) {
+Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, glm::vec4 inLodLevels) {
 	isPaused = true;
 	param.position = startpos;
 	yvec = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -23,7 +23,7 @@ Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, glm:
 
 	winWidth = screenWidth;
 	winHeight = screenHeight;
-	param.lodLevels = lodLevels;
+	param.lodLevels = inLodLevels;
 
 	// Set starting WTVmatrix
 	Update();
@@ -35,6 +35,16 @@ Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, glm:
 	glBindBuffer(GL_UNIFORM_BUFFER, cameraBuffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraParam), &param, GL_STREAM_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+
+	cameraTwMembers[0] = {"Cam Pos x", TW_TYPE_FLOAT, offsetof(CameraParam, position.x), " readonly=true group=Info "};
+	cameraTwMembers[1] = {"Cam Pos y", TW_TYPE_FLOAT, offsetof(CameraParam, position.y), " readonly=true group=Info "};
+	cameraTwMembers[2] = {"Cam Pos z", TW_TYPE_FLOAT, offsetof(CameraParam, position.z), " readonly=true group=Info "};
+	cameraTwMembers[3] = {"LOD 1 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.x), " min=0.0 max=2000.0 step=100.0 group=Controls "};
+	cameraTwMembers[4] = {"LOD 2 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.y), " min=0.0 max=2000.0 step=100.0 group=Controls "};
+	cameraTwMembers[5] = {"LOD 3 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.z), " min=0.0 max=2000.0 step=50.0 group=Controls "};
+	cameraTwMembers[6] = {"LOD 4 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.w), " min=0.0 max=2000.0 step=10.0 group=Controls "};
+	cameraTwStruct = TwDefineStruct("Camera", cameraTwMembers, 7, sizeof(CameraParam), NULL, NULL);
 }
 
 void Camera::ResetCamera(glm::vec3 pos) {
@@ -109,6 +119,7 @@ void Camera::UploadParams() {
 
 void Camera::UpdateCamera() {
 	Update();
+	SetFrustum();
 	UpdateCullingBox();
 	UploadParams();
 }
