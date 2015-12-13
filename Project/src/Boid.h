@@ -50,6 +50,11 @@ public:
 
 	TwType GetBoidTwType() { return boidTwStruct; }
 	BoidStruct* GetBoidStructPtr() { return &param; }
+
+	/// @brief Used by AntTweakBar to set which texture to use
+	static void TW_CALL SetBoidCB(const void* value, void* clientData);
+	/// @brief Used by AntTweakBar to get which texture is in use
+	static void TW_CALL GetBoidParamsCB(void* value, void* clientData);
 };
 
 #endif // BOID_H

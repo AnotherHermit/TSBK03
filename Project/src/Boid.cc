@@ -7,8 +7,6 @@
 
 #include "Boid.h"
 
-//boidTwStruct = TwDefineStruct("Boids", boidTwMembers, 5, sizeof(BoidStruct), NULL, NULL);
-
 Boid::Boid() {
 	param.previous = 1.0f;
 	param.cohesion = 0.03f;
@@ -34,4 +32,14 @@ void Boid::Update() {
 	glBindBuffer(GL_UNIFORM_BUFFER, boidBuffer);
 	glBufferSubData(GL_UNIFORM_BUFFER, NULL, sizeof(BoidStruct), &param);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void TW_CALL Boid::SetBoidCB(const void* value, void* clientData) {
+	static_cast<Boid*>(clientData)->param = *static_cast<const BoidStruct*>(value);
+	static_cast<Boid*>(clientData)->Update();
+}
+
+
+void TW_CALL Boid::GetBoidParamsCB(void* value, void* clientData) {
+	*static_cast<BoidStruct*>(value) = static_cast<Boid*>(clientData)->param;
 }

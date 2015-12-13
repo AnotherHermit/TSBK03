@@ -32,7 +32,11 @@ Program::Program() {
 }
 
 int Program::Execute() {
-	if (!Init()) return -1;
+	if (!Init()) {
+		std::cout << "\nInit failed. Press enter to quit..." << std::endl;
+		getchar();
+		return -1;
+	}
 
 	SDL_Event Event;
 
@@ -99,7 +103,7 @@ bool Program::Init() {
 	param.simulationSpeed = 30.0f;
 
 	glm::vec3 cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
-	glm::vec4 cameraLODLevels = glm::vec4(1000.0f, 250.0f, 70.0f, 20.0f);
+	glm::vec4 cameraLODLevels = glm::vec4(500.0f, 250.0f, 70.0f, 20.0f);
 
 	GLuint particlesPerSide = 64;
 	GLfloat binSize = 20.0f;
@@ -142,9 +146,14 @@ bool Program::Init() {
 	TwAddVarRW(antBar, "Cam Rot Speed", TW_TYPE_FLOAT, cam->GetRotSpeedPtr(), " min=0.0 max=0.010 step=0.001 group=Controls ");
 	TwAddVarCB(antBar, "Camera", cam->GetCameraTwType(), cam->SetLODCB, cam->GetCamParamsCB, cam, " opened=true ");
 
-	TwAddVarRW(antBar, "Boids", boid->GetBoidTwType(), boid->GetBoidStructPtr(), " opened=true " );
+	TwAddVarCB(antBar, "Boids", boid->GetBoidTwType(), boid->SetBoidCB, boid->GetBoidParamsCB, boid, " opened=true " );
 
 	TwDefine(" Particles/'Boid Controls' group=Controls");
+
+	// Check if AntTweak Setup is ok
+	if (TwGetLastError() != NULL) {
+		return false;
+	}
 
 	return true;
 }
@@ -253,10 +262,7 @@ void Program::Update() {
 
 	// Update the camera
 	cam->UpdateCamera();
-
-	// Update the boid parameters
-	boid->Update();
-
+	
 	// Update the particles
 	particleSystem->DoCompute();
 
