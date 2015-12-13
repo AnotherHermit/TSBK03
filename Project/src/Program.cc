@@ -26,7 +26,7 @@ Program::Program() {
 
 	// Start state
 	isRunning = true;
-	renderModels = false;
+	renderModels = true;
 
 	// Time init
 	time.startTimer();
@@ -112,10 +112,10 @@ bool Program::Init() {
 
 	// Set up different models to render
 	model = new Sphere();
-	model->Init(particleSystem->GetCullBuffer());
+	model->Init(particleSystem->GetCullBuffer(), particleSystem->GetDrawCommandBuffer());
 
 	billboard = new Billboard();
-	billboard->Init(particleSystem->GetCullBuffer());
+	billboard->Init(particleSystem->GetCullBuffer(), particleSystem->GetDrawCommandBuffer());
 
 	printError("after models init");
 	
@@ -286,7 +286,7 @@ void Program::Update() {
 void Program::Render() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 
 	if (renderModels) {
 		model->Draw(particleSystem->GetDrawParticles());	

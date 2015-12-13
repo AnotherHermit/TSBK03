@@ -48,9 +48,6 @@
     <ClCompile Include="src\Particles.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\common\loadobj.cc">
-      <Filter>Source Files\common</Filter>
-    </ClCompile>
     <ClCompile Include="src\common\LoadTGA.cc">
       <Filter>Source Files\common</Filter>
     </ClCompile>
@@ -89,9 +86,6 @@
     <ClInclude Include="src\common\Windows\wglew.h">
       <Filter>Header Files\common\Externals</Filter>
     </ClInclude>
-    <ClInclude Include="src\common\loadobj.h">
-      <Filter>Header Files\common</Filter>
-    </ClInclude>
     <ClInclude Include="src\common\LoadTGA.h">
       <Filter>Header Files\common</Filter>
     </ClInclude>
@@ -115,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="src\myDrawable.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common\tiny_obj_loader.h">
+      <Filter>Header Files\common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

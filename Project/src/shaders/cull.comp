@@ -32,6 +32,14 @@ struct Program {
 	float simSpeed;
 };
 
+struct DrawElementsIndirectCommand {
+	uint vertexCount;
+	uint instanceCount;
+	uint firstVertex;
+	uint baseVertex;
+	uint baseInstance;
+};
+
 layout (std430, binding = 0) readonly buffer ParticleBuffer
 {
     Particle particles[];  
@@ -50,7 +58,9 @@ layout (std140, binding = 12) uniform ProgramBuffer {
 };
 
 // Atomic counter of rendered particles;
-layout(binding = 0) uniform atomic_uint particlesToRender[5];
+layout(std430, binding = 6) buffer DrawCmdBuffer {
+	DrawElementsIndirectCommand drawCmd[5];
+};
 
 void main(void) {
 	uint currentParticle = gl_GlobalInvocationID.x;
@@ -86,9 +96,9 @@ void main(void) {
 	keepPoint = keepPoint && (distance > 0);
 	
 	if(keepPoint) {
-		outParticleNum = atomicCounterIncrement(particlesToRender[0]);
-		cullPositions[outParticleNum * 3] = pos.x;
-		cullPositions[outParticleNum * 3 + 1] = pos.y;
-		cullPositions[outParticleNum * 3 + 2] = pos.z;
+		outParticleNum = atomicAdd(drawCmd[0].instanceCount, 1);
+		cullPositions[(drawCmd[0].baseInstance + outParticleNum) * 3] = pos.x;
+		cullPositions[(drawCmd[0].baseInstance + outParticleNum) * 3 + 1] = pos.y;
+		cullPositions[(drawCmd[0].baseInstance + outParticleNum) * 3 + 2] = pos.z;
 	}
 }

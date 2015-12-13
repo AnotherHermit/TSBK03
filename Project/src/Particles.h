@@ -11,6 +11,8 @@
 #include "Camera.h"
 #include "myDrawable.h"
 
+#include "GL_utilities.h"
+
 #include "glm.hpp"
 
 #include <vector>
@@ -50,7 +52,8 @@ private:
 	GLuint numThreads;
 
 	// Compute shader stuff
-	GLuint particleBuffers[3], binBuffers[3], counterBuffer;
+	DrawElementsIndirectCommand drawIndCmd[4];
+	GLuint particleBuffers[3], binBuffers[3], drawIndBuffer;
 	GLuint computeBin, computePrefixGather, computePrefixReduce, computePrefixSpread, computeSort, computeUpdate, computeCull;
 	GLuint computeDrawParticles;
 	GLuint inBufferIndex, outBufferIndex;
@@ -91,6 +94,7 @@ public:
 
 	GLuint* GetParticleBuffers() { return particleBuffers; }
 	GLuint* GetBinBuffers() { return binBuffers; }
+	GLuint GetDrawCommandBuffer() { return drawIndBuffer; }
 
 	void SetParticles(GLuint newParticles);
 };

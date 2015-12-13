@@ -36,17 +36,30 @@ Particles::Particles(GLuint numParticles, GLfloat initBinSize) {
 	inBufferIndex = 0;
 	outBufferIndex = 1;
 
+	// Count of particles per LOD, start at 0 and counted by computeCull
+	drawIndCmd[0].instanceCount = 0;
+	drawIndCmd[1].instanceCount = 0;
+	drawIndCmd[2].instanceCount = 0;
+	drawIndCmd[3].instanceCount = 0;
+
+	// Where in the cull buffer the positions of each LOD starts
+	drawIndCmd[0].baseInstance = 0;
+	drawIndCmd[1].baseInstance = MAX_PARTICLES / 4 * 1;
+	drawIndCmd[2].baseInstance = MAX_PARTICLES / 4 * 2;
+	drawIndCmd[3].baseInstance = MAX_PARTICLES / 4 * 3;
+	// rest of the draw commands are set by drawable when the models are read.
+
 	//create buffers
 	glGenBuffers(3, particleBuffers);
 	glGenBuffers(3, binBuffers);
-	glGenBuffers(1, &counterBuffer);
+	glGenBuffers(1, &drawIndBuffer);
 	glGenBuffers(1, &binBuffer);
 }
 
 Particles::~Particles() {
 	glDeleteBuffers(3, particleBuffers);
 	glDeleteBuffers(3, binBuffers);
-	glDeleteBuffers(1, &counterBuffer);
+	glDeleteBuffers(1, &drawIndBuffer);
 	glDeleteBuffers(1, &binBuffer);
 
 	glDeleteProgram(computeBin);
@@ -125,9 +138,6 @@ void Particles::SetParticleData() {
 
 
 void Particles::InitCompute() {
-
-	GLuint setCounter[5] = { 0, 1, 0, 0, 0 };
-
 	// Initialize buffers
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[0]); // Particle data
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, particleData.data(), GL_STREAM_COPY);
@@ -138,7 +148,7 @@ void Particles::InitCompute() {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[2]); // Particle positions / cull output buffer
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 3 * particles, NULL, GL_STREAM_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(GLfloat) * 3 * MAX_PARTICLES, NULL, GL_STREAM_COPY);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	printError("init particle data buffers");
@@ -160,9 +170,9 @@ void Particles::InitCompute() {
 
 	printError("init bin data buffers");
 
-	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer); // Buffer for indirect drawing
-	glBufferData(GL_ATOMIC_COUNTER_BUFFER, 5 * sizeof(GLuint), setCounter, GL_STREAM_READ);
-	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawIndBuffer); // Buffer for indirect drawing
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(drawIndCmd), drawIndCmd, GL_STREAM_READ);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_UNIFORM_BUFFER, binBuffer); // Uniform bin information
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(BinStruct), &binParam, GL_STREAM_DRAW);
@@ -172,7 +182,7 @@ void Particles::InitCompute() {
 
 	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 0, 3, particleBuffers);
 	glBindBuffersBase(GL_SHADER_STORAGE_BUFFER, 3, 3, binBuffers);
-	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, counterBuffer);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, drawIndBuffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 11, binBuffer);
 
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
@@ -250,22 +260,26 @@ void Particles::ComputeUpdate() {
 }
 
 void Particles::ComputeCull() {
-	//GLuint tempCounter[4];
 	GLuint reset = 0;
 
+	DrawElementsIndirectCommand temp;
+
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterBuffer);
-	glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint), &reset); // Clear data before since data is used when drawing
-	glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawIndBuffer);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0*sizeof(DrawElementsIndirectCommand) + sizeof(GLuint), sizeof(GLuint), &reset); // Clear data before since data is used when drawing
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 1*sizeof(DrawElementsIndirectCommand) + sizeof(GLuint), sizeof(GLuint), &reset);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 2*sizeof(DrawElementsIndirectCommand) + sizeof(GLuint), sizeof(GLuint), &reset);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 3*sizeof(DrawElementsIndirectCommand) + sizeof(GLuint), sizeof(GLuint), &reset);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	glUseProgram(computeCull);
 	glDispatchCompute(particles / 64, 1, 1);
 
-	//glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, 5 * sizeof(GLuint), tempCounter);
-	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, counterBuffer);
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 2 * sizeof(DrawElementsIndirectCommand) + sizeof(GLuint), sizeof(GLuint), &computeDrawParticles);
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 2 * sizeof(DrawElementsIndirectCommand), sizeof(DrawElementsIndirectCommand), &temp);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawIndBuffer);
 	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-	//computeDrawParticles = tempCounter[0];
 	//printf("Counter Data: %u, %u, %u, %u\n", tempCounter[0], tempCounter[1], tempCounter[2], tempCounter[3]);
 
 	printError("Do Compute: Culling");

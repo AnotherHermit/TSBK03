@@ -90,4 +90,14 @@ private:
 	GLfloat lapTime, time;
 };
 
+// Draw Indirect command struct
+struct DrawElementsIndirectCommand {
+	GLuint vertexCount;
+	GLuint instanceCount;
+	GLuint firstVertex;
+	GLuint baseVertex;
+	GLuint baseInstance;
+};
+
+
 #endif

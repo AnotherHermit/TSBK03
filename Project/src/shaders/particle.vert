@@ -10,10 +10,8 @@
 in vec3 posValue;
 in vec3 inPosition;
 in vec3 inNormal;
-in vec2 inTexCoord;
 
 out vec3 exNormal;
-out vec2 exTexCoord;
 out vec4 exPosition;
 
 struct Camera {
@@ -43,9 +41,7 @@ layout (std140, binding = 12) uniform ProgramBuffer {
 void main(void)
 {
 	exNormal = mat3(cam.WTVmatrix) * inNormal;
-
-	exTexCoord = inTexCoord;
-	
+		
 	vec4 temp = cam.WTVmatrix * vec4(inPosition * prog.radius + posValue, 1.0f);
 	
 	exPosition = temp;

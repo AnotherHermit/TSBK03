@@ -334,7 +334,6 @@
     <ClCompile Include="src\Boid.cc" />
     <ClCompile Include="src\Camera.cc" />
     <ClCompile Include="src\common\GL_utilities.cc" />
-    <ClCompile Include="src\common\loadobj.cc" />
     <ClCompile Include="src\common\LoadTGA.cc" />
     <ClCompile Include="src\common\Windows\glew.c" />
     <ClCompile Include="src\Fixtures.cc" />
@@ -348,8 +347,8 @@
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\common\AntTweak\AntTweakBar.h" />
     <ClInclude Include="src\common\GL_utilities.h" />
-    <ClInclude Include="src\common\loadobj.h" />
     <ClInclude Include="src\common\LoadTGA.h" />
+    <ClInclude Include="src\common\tiny_obj_loader.h" />
     <ClInclude Include="src\common\Windows\glew.h" />
     <ClInclude Include="src\common\Windows\wglew.h" />
     <ClInclude Include="src\myDrawable.h" />

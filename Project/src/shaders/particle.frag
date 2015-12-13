@@ -8,7 +8,6 @@
 #version 430
 
 in vec3 exNormal;
-in vec2 exTexCoord;
 in vec4 exPosition;
 
 out vec4 outColor;

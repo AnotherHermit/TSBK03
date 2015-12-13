@@ -8,11 +8,15 @@
 #ifndef myDrawable_H
 #define myDrawable_H
 
+#include "tiny_obj_loader.h"
+
 #include "Camera.h"
 
-#include "loadobj.h"
+#include "GL_utilities.h"
 
 #include "glm.hpp"
+
+
 
 // ===== myDrawable base class =====
 
@@ -20,21 +24,26 @@ class myDrawable {
 public:
 	myDrawable() {}
 	
-	virtual bool Init(GLuint buffer) = 0;
+	virtual bool Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) = 0;
 	virtual void Draw(GLuint num) = 0;
 };
 
 // ===== Sphere class =====
 
 class Sphere : public myDrawable {
-private:
-	GLuint program, cullBuffer;
-	Model* model;
+protected:
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+
+	DrawElementsIndirectCommand drawIndCmd[4];
+	GLuint program;
+	GLuint cullBuffer, drawBuffers[3], drawCmdBuffer;
+	GLuint drawVAO;
 
 public:
 	Sphere();
 
-	virtual bool Init(GLuint buffer);
+	virtual bool Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer);
 	virtual void Draw(GLuint num);
 };
 
@@ -47,7 +56,7 @@ private:
 public:
 	Billboard();
 
-	virtual bool Init(GLuint buffer);
+	virtual bool Init(GLuint inCullBuffer, GLuint notUsed);
 	virtual void Draw(GLuint num);
 };
 
