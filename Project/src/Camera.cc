@@ -13,6 +13,8 @@
 
 Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, glm::vec4 inLodLevels) {
 	isPaused = true;
+	needUpdate = true;
+
 	param.position = startpos;
 	yvec = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -25,24 +27,22 @@ Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, glm:
 	winHeight = screenHeight;
 	param.lodLevels = inLodLevels;
 
-	// Set starting WTVmatrix
-	Update();
-	SetFrustum();
-	UpdateCullingBox();
-
 	glGenBuffers(1, &cameraBuffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 10, cameraBuffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, cameraBuffer);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraParam), &param, GL_STREAM_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraParam), NULL, GL_STREAM_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+	// Set starting WTVmatrix
+	SetFrustum();
+	UpdateCamera();
 
 	cameraTwMembers[0] = {"Cam Pos x", TW_TYPE_FLOAT, offsetof(CameraParam, position.x), " readonly=true group=Info "};
 	cameraTwMembers[1] = {"Cam Pos y", TW_TYPE_FLOAT, offsetof(CameraParam, position.y), " readonly=true group=Info "};
 	cameraTwMembers[2] = {"Cam Pos z", TW_TYPE_FLOAT, offsetof(CameraParam, position.z), " readonly=true group=Info "};
-	cameraTwMembers[3] = {"LOD 1 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.x), " min=0.0 max=2000.0 step=100.0 group=Controls "};
-	cameraTwMembers[4] = {"LOD 2 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.y), " min=0.0 max=2000.0 step=100.0 group=Controls "};
-	cameraTwMembers[5] = {"LOD 3 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.z), " min=0.0 max=2000.0 step=50.0 group=Controls "};
+	cameraTwMembers[3] = {"LOD 1 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.x), " min=0.0 max=2000.0 step=10.0 group=Controls "};
+	cameraTwMembers[4] = {"LOD 2 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.y), " min=0.0 max=2000.0 step=10.0 group=Controls "};
+	cameraTwMembers[5] = {"LOD 3 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.z), " min=0.0 max=2000.0 step=10.0 group=Controls "};
 	cameraTwMembers[6] = {"LOD 4 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.w), " min=0.0 max=2000.0 step=10.0 group=Controls "};
 	cameraTwStruct = TwDefineStruct("Camera", cameraTwMembers, 7, sizeof(CameraParam), NULL, NULL);
 }
@@ -87,6 +87,8 @@ void Camera::SetFrustum() {
 	nontransNormals[5] = glm::vec3(0.0, 0.0, 1.0);
 	nontransNormals[6] = glm::vec3(0.0, 0.0, 1.0);
 	nontransNormals[7] = glm::vec3(0.0, 0.0, 1.0);
+
+	needUpdate = true;
 }
 
 void Camera::UpdateCullingBox() {
@@ -118,25 +120,30 @@ void Camera::UploadParams() {
 }
 
 void Camera::UpdateCamera() {
-	Update();
-	SetFrustum();
-	UpdateCullingBox();
-	UploadParams();
+	if (needUpdate) {
+		Update();
+		UpdateCullingBox();
+		UploadParams();
+	}
+	needUpdate = false;
 }
 
 void Camera::MoveForward(GLfloat deltaT) {
 	if (!isPaused) {
 		param.position += heading * mspeed * deltaT;
+		needUpdate = true;
 	}
 }
 void Camera::MoveRight(GLfloat deltaT) {
 	if (!isPaused) {
 		param.position += side * mspeed * deltaT;
+		needUpdate = true;
 	}
 }
 void Camera::MoveUp(GLfloat deltaT) {
 	if (!isPaused) {
 		param.position += up * mspeed * deltaT;
+		needUpdate = true;
 	}
 }
 
@@ -149,5 +156,21 @@ void Camera::RotateCamera(GLint dx, GLint dy) {
 
 		phi = fmod(phi, 2.0f * M_PI);
 		theta = theta < M_PI - eps ? (theta > eps ? theta : eps) : M_PI - eps;
+		needUpdate = true;
 	}
+}
+
+void TW_CALL Camera::SetLODCB(const void* value, void* clientData) {
+	Camera* obj = static_cast<Camera*>(clientData);
+	CameraParam input = *static_cast<const CameraParam*>(value);
+
+	// Fancy LOD update could go here
+
+	obj->param = input;
+	obj->SetFrustum();
+}
+
+
+void TW_CALL Camera::GetCamParamsCB(void* value, void* clientData) {
+	*static_cast<CameraParam*>(value) = static_cast<Camera*>(clientData)->param;
 }

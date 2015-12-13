@@ -89,8 +89,8 @@ bool Program::Init() {
 	antBar = TwNewBar("Particles");
 	TwDefine(" Particles refresh=0.1 ");
 	TwDefine(" Particles size='270 350' ");
-	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, " group=Info ");
-	TwAddVarRW(antBar, "Sim Speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls  ");
+	TwDefine(" Particles help='This program simulates flocking behaviour of lots of particles in 3D.\n"
+			 "The simulation is started/paused by pressing SPACE.' ");
 
 	printError("after AntBar init");
 
@@ -99,8 +99,7 @@ bool Program::Init() {
 	param.simulationSpeed = 30.0f;
 
 	glm::vec3 cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
-	glm::vec4 cameraLODLevels = glm::vec4(500.0f, 250.0f, 125.0f, 60.0f);
-
+	glm::vec4 cameraLODLevels = glm::vec4(1000.0f, 250.0f, 70.0f, 20.0f);
 
 	GLuint particlesPerSide = 64;
 	GLfloat binSize = 20.0f;
@@ -136,15 +135,16 @@ bool Program::Init() {
 
 	printError("after setting program params");
 	
-	
+	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, " group=Info ");
+	TwAddVarRW(antBar, "Sim Speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls  ");
 
 	TwAddVarRW(antBar, "Cam Speed", TW_TYPE_FLOAT, cam->GetSpeedPtr(), " min=0 max=200 step=10 group=Controls ");
 	TwAddVarRW(antBar, "Cam Rot Speed", TW_TYPE_FLOAT, cam->GetRotSpeedPtr(), " min=0.0 max=0.010 step=0.001 group=Controls ");
-	TwAddVarRW(antBar, "Camera", cam->GetCameraTwType(), cam->GetCameraStructPtr(), " opened=true ");
+	TwAddVarCB(antBar, "Camera", cam->GetCameraTwType(), cam->SetLODCB, cam->GetCamParamsCB, cam, " opened=true ");
 
 	TwAddVarRW(antBar, "Boids", boid->GetBoidTwType(), boid->GetBoidStructPtr(), " opened=true " );
 
-	TwDefine(" Particles/BoidControls group=Controls");
+	TwDefine(" Particles/'Boid Controls' group=Controls");
 
 	return true;
 }
@@ -219,7 +219,8 @@ void Program::OnKeypress(SDL_Event *Event) {
 void Program::OnMouseMove(SDL_Event *Event) {
 	if (!SDL_GetRelativeMouseMode())
 		TwMouseMotion(Event->motion.x, Event->motion.y);
-	cam->RotateCamera(Event->motion.xrel, Event->motion.yrel);
+	else
+		cam->RotateCamera(Event->motion.xrel, Event->motion.yrel);
 }
 
 void Program::CheckKeyDowns() {

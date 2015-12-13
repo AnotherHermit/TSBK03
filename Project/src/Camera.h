@@ -54,6 +54,7 @@ private:
 	glm::vec3 nontransNormals[8];
 
 	bool isPaused;
+	bool needUpdate;
 
 	GLuint cameraBuffer;
 	GLint *winWidth, *winHeight;
@@ -86,6 +87,11 @@ public:
 
 	TwType GetCameraTwType() { return cameraTwStruct; }
 	CameraParam* GetCameraStructPtr() { return &param; }
+
+	/// @brief Used by AntTweakBar to set which texture to use
+	static void TW_CALL SetLODCB(const void* value, void* clientData);
+	/// @brief Used by AntTweakBar to get which texture is in use
+	static void TW_CALL GetCamParamsCB(void* value, void* clientData);
 };
 
 #endif // CAMERA_H
