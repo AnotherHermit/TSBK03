@@ -45,12 +45,12 @@ bool Sphere::Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
 
 	GLuint indexOffset = 0, vertexOffset = 0, useShapes = 4;
 	for (size_t i = 0; i < useShapes; i++) {
-		drawIndCmd[i].vertexCount = shapes[i].mesh.indices.size();
+		drawIndCmd[i].vertexCount = (GLuint)shapes[i].mesh.indices.size();
 		drawIndCmd[i].firstVertex = indexOffset;
-		indexOffset += shapes[i].mesh.indices.size();
+		indexOffset += (GLuint)shapes[i].mesh.indices.size();
 
 		drawIndCmd[i].baseVertex = vertexOffset;
-		vertexOffset += shapes[i].mesh.positions.size() / 3;
+		vertexOffset += (GLuint)shapes[i].mesh.positions.size() / 3;
 	}
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCmdBuffer);
@@ -127,7 +127,7 @@ bool Sphere::Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
 	return true;
 }
 
-void Sphere::Draw(GLuint num) {
+void Sphere::Draw() {
 	glUseProgram(program);
 
 	glBindVertexArray(drawVAO);
@@ -135,51 +135,4 @@ void Sphere::Draw(GLuint num) {
 	glBindVertexArray(0);
 
 	printError("Draw Spheres");
-}
-
-Billboard::Billboard() {
-	program = -1;
-	texID = -1;
-	vao = -1;
-	cullBuffer = -1;
-}
-
-bool Billboard::Init(GLuint buffer, GLuint notUsed) {
-	cullBuffer = buffer;
-
-	program = loadShadersG("src/shaders/billboard.vert", "src/shaders/billboard.frag", "src/shaders/billboard.geom");
-	glUseProgram(program);
-
-	glGenVertexArrays(1, &vao);
-	glGenTextures(1, &texID);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texID);
-	LoadTGATextureSimple("resources/particle.tga", &texID);
-
-	glUniform1i(glGetUniformLocation(program, "texUnit"), 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, cullBuffer);
-	glBindVertexArray(vao);
-
-	GLuint drPosAttr = glGetAttribLocation(program, "posValue");
-	glEnableVertexAttribArray(drPosAttr);
-	glVertexAttribPointer(drPosAttr, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	printError("Init Billboard");
-	return true;
-}
-
-void Billboard::Draw(GLuint num) {
-	glUseProgram(program);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texID);
-	glBindVertexArray(vao);
-	glDrawArraysIndirect(GL_POINTS, 0);
-	glBindVertexArray(0);
-
-	printError("Draw Billboards");
 }

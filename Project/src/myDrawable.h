@@ -25,7 +25,7 @@ public:
 	myDrawable() {}
 	
 	virtual bool Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) = 0;
-	virtual void Draw(GLuint num) = 0;
+	virtual void Draw() = 0;
 };
 
 // ===== Sphere class =====
@@ -44,20 +44,7 @@ public:
 	Sphere();
 
 	virtual bool Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer);
-	virtual void Draw(GLuint num);
-};
-
-// ===== Billboard class =====
-
-class Billboard : public myDrawable {
-private:
-	GLuint program, texID, vao, cullBuffer;
-
-public:
-	Billboard();
-
-	virtual bool Init(GLuint inCullBuffer, GLuint notUsed);
-	virtual void Draw(GLuint num);
+	virtual void Draw();
 };
 
 #endif // myDrawable_H

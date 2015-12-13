@@ -58,7 +58,8 @@ private:
 	GLuint computeDrawParticles;
 	GLuint inBufferIndex, outBufferIndex;
 	GLuint prefixWorkGroups;
-	void InitCompute();
+	void ResetBuffers();
+	void InitBuffers();
 
 public:
 	Particles(GLuint numParticles, GLfloat initBinSize);

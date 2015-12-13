@@ -47,7 +47,6 @@ private:
 	GLint winWidth, winHeight;
 
 	bool isRunning;
-	bool renderModels;
 
 	Timer time;
 	GLfloat FPS;
@@ -60,9 +59,8 @@ private:
 	TwBar *antBar;
 
 	// Drawing stuff
-	myDrawable *model, *billboard;
+	myDrawable *spheres;
 
-	void ToggleDrawModels() { renderModels = !renderModels; }
 
 public:
 	Program();

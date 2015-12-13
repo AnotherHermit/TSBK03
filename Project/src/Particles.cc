@@ -83,7 +83,7 @@ bool Particles::Init() {
 	isOk += CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
 	isOk += CompileComputeShader(&computeCull, "src/shaders/cull.comp");
 
-	InitCompute();
+	InitBuffers();
 
 	printError("Particles Constructor");
 	return isOk == 0;
@@ -103,7 +103,7 @@ void Particles::SetParticles(GLuint newParticles) {
 	prefixWorkGroups = (GLuint)ceil((float)binParam.totalBins / (float)ELEMENTS_REDUCE_PHASE);
 
 	SetParticleData();
-	InitCompute();
+	ResetBuffers();
 }
 
 void Particles::SetParticleData() {
@@ -136,15 +136,16 @@ void Particles::SetParticleData() {
 	}
 }
 
-
-void Particles::InitCompute() {
+void Particles::InitBuffers() {
 	// Initialize buffers
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[0]); // Particle data
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, particleData.data(), GL_STREAM_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * MAX_PARTICLES, NULL, GL_STREAM_COPY);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ParticleStruct) * particles, particleData.data());
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[1]); // Particle data ping pong
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * particles, particleData.data(), GL_STREAM_COPY);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ParticleStruct) * MAX_PARTICLES, NULL, GL_STREAM_COPY);
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ParticleStruct) * particles, particleData.data());
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[2]); // Particle positions / cull output buffer
@@ -185,8 +186,8 @@ void Particles::InitCompute() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, drawIndBuffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 11, binBuffer);
 
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
-
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	
 #ifndef _TEST
 	particleData.clear();
 #endif
@@ -194,8 +195,27 @@ void Particles::InitCompute() {
 	printError("init buffer base bindings");
 }
 
+void Particles::ResetBuffers() {
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[0]); // Particle data
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ParticleStruct) * particles, particleData.data());
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleBuffers[1]); // Particle data ping pong
+	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(ParticleStruct) * particles, particleData.data());
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+#ifndef _TEST
+	particleData.clear();
+#endif
+
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
 
 void Particles::ComputeBins() {
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, NULL);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 	glUseProgram(computeBin);
 	glDispatchCompute(particles / numThreads, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -212,7 +232,6 @@ void Particles::ComputePrefixGather() {
 }
 
 void Particles::ComputePrefixReduce() {
-
 	glUseProgram(computePrefixReduce);
 	glDispatchCompute(1, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -221,7 +240,6 @@ void Particles::ComputePrefixReduce() {
 }
 
 void Particles::ComputePrefixSpread() {
-
 	glUseProgram(computePrefixSpread);
 	glDispatchCompute(prefixWorkGroups, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -242,7 +260,6 @@ void Particles::ComputeSort() {
 }
 
 void Particles::ComputeUpdate() {
-
 	if (doUpdate) {
 		glUseProgram(computeUpdate);
 		glDispatchCompute(particles / 64, 1, 1);
@@ -251,9 +268,6 @@ void Particles::ComputeUpdate() {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffers[inBufferIndex]);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, particleBuffers[outBufferIndex]);
 	}
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, binBuffers[0]);
-	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32UI, GL_RED, GL_UNSIGNED_INT, NULL);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Update");
@@ -261,8 +275,6 @@ void Particles::ComputeUpdate() {
 
 void Particles::ComputeCull() {
 	GLuint reset = 0;
-
-	DrawElementsIndirectCommand temp;
 
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawIndBuffer);
@@ -275,12 +287,9 @@ void Particles::ComputeCull() {
 	glUseProgram(computeCull);
 	glDispatchCompute(particles / 64, 1, 1);
 
-	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 2 * sizeof(DrawElementsIndirectCommand) + sizeof(GLuint), sizeof(GLuint), &computeDrawParticles);
-	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 2 * sizeof(DrawElementsIndirectCommand), sizeof(DrawElementsIndirectCommand), &temp);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, drawIndBuffer);
 	glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-	//printf("Counter Data: %u, %u, %u, %u\n", tempCounter[0], tempCounter[1], tempCounter[2], tempCounter[3]);
 
 	printError("Do Compute: Culling");
 }
