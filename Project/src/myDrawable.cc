@@ -10,7 +10,6 @@
 
 #include "myDrawable.h"
 
-#include "LoadTGA.h"
 #include "GL_utilities.h"
 
 #include "glm.hpp"
