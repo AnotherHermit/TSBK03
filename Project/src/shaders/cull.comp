@@ -19,10 +19,11 @@ struct Particle {
 struct Camera {
 	mat4 WTVmatrix;
 	mat4 VTPmatrix;
-	vec4 normals[5];
-	vec4 points[5];
+	vec4 normals[8];
+	vec4 points[8];
 	vec3 position;
-	float viewDistance;
+	uint padding99;
+	vec4 lodLevels;
 };
 
 struct Program {
@@ -67,38 +68,63 @@ void main(void) {
 	uint outParticleNum = 0;
 
 	vec3 pos = particles[currentParticle].position;
-	uint bin = particles[currentParticle].bin;
+	//uint bin = particles[currentParticle].bin;
 	int i = 0;
 	bool keepPoint = true;
 
+	// Check intersection with left frustum plane
 	vec3 new_point = pos + cam.normals[i].xyz * prog.radius;
 	float distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = (distance > 0);
 	i++;
 	
+	// Check intersection with right frustum plane
 	new_point = pos + cam.normals[i].xyz * prog.radius;
 	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = keepPoint && (distance > 0);
 	i++;
 
+	// Check intersection with bottom frustum plane
 	new_point = pos + cam.normals[i].xyz * prog.radius;
 	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = keepPoint && (distance > 0);
 	i++;
 
+	// Check intersection with top frustum plane
 	new_point = pos + cam.normals[i].xyz * prog.radius;
 	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
 	keepPoint = keepPoint && (distance > 0);
 	i++;
-
-	new_point = pos + cam.normals[i].xyz * prog.radius;
-	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
-	keepPoint = keepPoint && (distance > 0);
 	
+	// Check intersection with far frustum plane (LOD 1)
+	new_point = pos + cam.normals[i].xyz * prog.radius;
+	distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
+	keepPoint = keepPoint && (distance > 0);
+	i++;
+
 	if(keepPoint) {
-		outParticleNum = atomicAdd(drawCmd[0].instanceCount, 1);
-		cullPositions[(drawCmd[0].baseInstance + outParticleNum) * 3] = pos.x;
-		cullPositions[(drawCmd[0].baseInstance + outParticleNum) * 3 + 1] = pos.y;
-		cullPositions[(drawCmd[0].baseInstance + outParticleNum) * 3 + 2] = pos.z;
+		uint ind = 0;
+
+		// Check intersection with LOD 2 plane
+		new_point = pos + cam.normals[i].xyz * prog.radius;
+		distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
+		ind += uint(distance > 0);
+		i++;
+
+		// Check intersection with LOD 3 plane
+		new_point = pos + cam.normals[i].xyz * prog.radius;
+		distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
+		ind += uint(distance > 0);
+		i++;
+
+		// Check intersection with LOD 4 plane
+		new_point = pos + cam.normals[i].xyz * prog.radius;
+		distance = dot(new_point, cam.normals[i].xyz) - dot(cam.points[i].xyz, cam.normals[i].xyz);
+		ind += uint(distance > 0);
+
+		outParticleNum = atomicAdd(drawCmd[ind].instanceCount, 1);
+		cullPositions[(drawCmd[ind].baseInstance + outParticleNum) * 3] = pos.x;
+		cullPositions[(drawCmd[ind].baseInstance + outParticleNum) * 3 + 1] = pos.y;
+		cullPositions[(drawCmd[ind].baseInstance + outParticleNum) * 3 + 2] = pos.z;
 	}
 }

@@ -88,13 +88,14 @@ bool Program::Init() {
 	param.simulationSpeed = 30.0f;
 
 	glm::vec3 cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
-	GLfloat cameraViewDistance = 500.0f;
+	glm::vec4 cameraLODLevels = glm::vec4(500.0f, 250.0f, 125.0f, 60.0f);
+
 
 	GLuint particlesPerSide = 64;
 	GLfloat binSize = 20.0f;
 
 	// Set up the camera
-	cam = new Camera(cameraStartPos, &winWidth, &winHeight, cameraViewDistance);
+	cam = new Camera(cameraStartPos, &winWidth, &winHeight, cameraLODLevels);
 
 	printError("after camera init");
 
@@ -143,7 +144,7 @@ bool Program::Init() {
 	TwAddVarRO(antBar, "Vertical view", TW_TYPE_FLOAT, cam->ThetaPtr(), " group=CameraInfo ");
 
 	TwAddVarRW(antBar, "Camera Speed", TW_TYPE_FLOAT, cam->SpeedPtr(), " min=0 max=200 step=10 group=Controls ");
-	TwAddVarRW(antBar, "View Distance", TW_TYPE_FLOAT, cam->ViewDistancePtr(), " min=0 max=2000 step=100 group=Controls ");
+	//TwAddVarRW(antBar, "View Distance", TW_TYPE_FLOAT, cam->ViewDistancePtr(), " min=0 max=2000 step=100 group=Controls ");
 	TwAddVarRW(antBar, "Simulation speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls ");
 
 	TwAddVarRW(antBar, "Previous", TW_TYPE_FLOAT, boid->GetPreviousPtr(), " min=0 max=1 step=0.01 group=Boid ");

@@ -27,11 +27,9 @@ bool Sphere::Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
 	cullBuffer = inCullBuffer;
 	drawCmdBuffer = inDrawCmdBuffer;
 
-
-
 	// Load models
 	std::string err;
-	bool wasLoaded = tinyobj::LoadObj(shapes, materials, err, "resources/Spheres-smooth.obj");
+	bool wasLoaded = tinyobj::LoadObj(shapes, materials, err, "resources/Spheres-flat.obj");
 	if (!wasLoaded || !err.empty()) {
 		std::cerr << err << std::endl;
 	}

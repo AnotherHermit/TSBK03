@@ -15,10 +15,11 @@ out vec4 outColor;
 struct Camera {
 	mat4 WTVmatrix;
 	mat4 VTPmatrix;
-	vec4 normals[5];
-	vec4 points[5];
+	vec4 normals[8];
+	vec4 points[8];
 	vec3 position;
-	float viewDistance;
+	uint padding99;
+	vec4 lodLevels;
 };
 
 struct Program {
@@ -59,8 +60,8 @@ void main()
 	
 	// Calculate fog
 	float dist = length(exPosition);
-	float minFogDist = cam.viewDistance / 2;
-	float maxFogDist = cam.viewDistance;
+	float minFogDist = cam.lodLevels.x / 2;
+	float maxFogDist = cam.lodLevels.x;
 	float fogFactor = clamp((dist - minFogDist)/(maxFogDist - minFogDist), 0.0f, 1.0f);
 	vec3 foggedColor = (1 - fogFactor) * shadedColor;
 			
