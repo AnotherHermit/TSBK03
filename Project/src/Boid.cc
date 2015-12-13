@@ -7,6 +7,8 @@
 
 #include "Boid.h"
 
+//boidTwStruct = TwDefineStruct("Boids", boidTwMembers, 5, sizeof(BoidStruct), NULL, NULL);
+
 Boid::Boid() {
 	param.previous = 1.0f;
 	param.cohesion = 0.03f;
@@ -19,6 +21,13 @@ Boid::Boid() {
 	glBindBuffer(GL_UNIFORM_BUFFER, boidBuffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(BoidStruct), &param, GL_STREAM_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	boidTwMembers[0] = { "Previous", TW_TYPE_FLOAT, offsetof(BoidStruct, previous), " min=0.0 max=1.0 step=0.01 "};
+	boidTwMembers[1] = { "Cohesion", TW_TYPE_FLOAT, offsetof(BoidStruct, cohesion), " min=0.0 max=1.0 step=0.01 "};
+	boidTwMembers[2] = { "Separation", TW_TYPE_FLOAT, offsetof(BoidStruct, separation), " min=0.0 max=1.0 step=0.01 "};
+	boidTwMembers[3] = { "Alignment", TW_TYPE_FLOAT, offsetof(BoidStruct, alignment), " min=0.0 max=1.0 step=0.01 "};
+	boidTwMembers[4] = { "Fear", TW_TYPE_FLOAT, offsetof(BoidStruct, fear), " min=0.0 max=1.0 step=0.01 "};
+	boidTwStruct = TwDefineStruct("Boids", boidTwMembers, 5, sizeof(BoidStruct), NULL, NULL);
 }
 
 void Boid::Update() {

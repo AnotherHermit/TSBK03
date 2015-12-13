@@ -25,6 +25,8 @@
 #	endif
 #endif
 
+#include "AntTweakBar.h"
+
 struct BoidStruct {
 	GLfloat previous;
 	GLfloat cohesion;
@@ -38,17 +40,16 @@ private:
 	GLuint boidBuffer;
 	BoidStruct param;
 
+	TwStructMember boidTwMembers[5];
+	TwType boidTwStruct;
+
 public:
 	Boid();
 
 	void Update();
 
-	GLfloat* GetPreviousPtr() { return &param.previous; }
-	GLfloat* GetCohesionPtr() { return &param.cohesion; }
-	GLfloat* GetSeparationPtr() { return &param.separation; }
-	GLfloat* GetAlignmentPtr() { return &param.alignment; }
-	GLfloat* GetFearPtr() { return &param.fear; }
-
+	TwType GetBoidTwType() { return boidTwStruct; }
+	BoidStruct* GetBoidStructPtr() { return &param; }
 };
 
 #endif // BOID_H

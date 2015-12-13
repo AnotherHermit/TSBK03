@@ -79,6 +79,11 @@ bool Program::Init() {
 	}
 #endif
 
+	// Set up the AntBar
+	TwInit(TW_OPENGL_CORE, NULL);
+	TwWindowSize(winWidth, winWidth);
+	antBar = TwNewBar("Particles");
+
 	dumpInfo();
 
 	printError("after wrapper inits");
@@ -125,11 +130,6 @@ bool Program::Init() {
 
 	printError("after setting program params");
 
-	// Set up the AntBar
-	TwInit(TW_OPENGL_CORE, NULL);
-	TwWindowSize(winWidth, winWidth);
-	antBar = TwNewBar("Particles");
-
 	TwDefine(" Particles refresh=0.1 ");
 	TwDefine(" Particles size='270 350' ");
 
@@ -147,11 +147,7 @@ bool Program::Init() {
 	//TwAddVarRW(antBar, "View Distance", TW_TYPE_FLOAT, cam->ViewDistancePtr(), " min=0 max=2000 step=100 group=Controls ");
 	TwAddVarRW(antBar, "Simulation speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls ");
 
-	TwAddVarRW(antBar, "Previous", TW_TYPE_FLOAT, boid->GetPreviousPtr(), " min=0 max=1 step=0.01 group=Boid ");
-	TwAddVarRW(antBar, "Cohesion", TW_TYPE_FLOAT, boid->GetCohesionPtr(), " min=0 max=1 step=0.01 group=Boid ");
-	TwAddVarRW(antBar, "Separation", TW_TYPE_FLOAT, boid->GetSeparationPtr(), " min=0 max=1 step=0.01 group=Boid ");
-	TwAddVarRW(antBar, "Alignment", TW_TYPE_FLOAT, boid->GetAlignmentPtr(), " min=0 max=1 step=0.01 group=Boid ");
-	TwAddVarRW(antBar, "Fear", TW_TYPE_FLOAT, boid->GetFearPtr(), " min=0 max=1 step=0.01 group=Boid ");
+	TwAddVarRW(antBar, "Boids", boid->GetBoidTwType(), boid->GetBoidStructPtr(), NULL);
 
 	printError("after AntBar init");
 

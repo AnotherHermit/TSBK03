@@ -6,7 +6,7 @@
 //			atomicAdd to the counter of the bin (partially independent)
 //		Output: Bin in particles and updated bin buffer
 
-// 2.	Prefix sum over all bins (Comp Shader or CPU) #DONEONCPU
+// 2.	Prefix sum over all bins (Comp Shader or CPU) #DONE
 //		Input: updated bin buffer
 //		Output: prefix sum buffer (new buffer or reuse the same? pingpong?)
 
@@ -17,7 +17,7 @@
 //			updates the bin buffer to know how many has been written
 //		Output: Sorted particle buffer, number of particles per bin
 
-// 4.	Particle time integration (Comp Shader)		#STARTED
+// 4.	Particle time integration (Comp Shader)		#DONE (Needs improvements)
 //		Input: output particles buffer, sorted particles buffer, prefix sum, particles per bin, time
 //		Work: reads continuoulsy the buffers in order which are within the particles neighbour radius
 //			specified in the prefix sum adding together particles per bin for bin that are in order.
@@ -46,14 +46,15 @@
 
 
 // Needed buffers: 											Size:
-// Bins:													256*256*256 = 16M
-//		* buffer with amout of particles in each bin (1)	16M * 4B = 64MB
-//		* buffer for prefix sum (1-2 algorithm dependent)	16M * 4B = 64MB
-//															= 128MB
+// Bins:													128*128*128 = 2M
+//		* buffer with amout of particles in each bin (1)	2M * 4B = 8MB
+//		* buffer for prefix sum first pass (1)				2M * 4B = 8MB
+//		* buffer for prefix sum second pass (1)				2k * 4B ~= 0M
+//															= 16MB
 // Particles:												4M
-//		* buffer for particle data (2)						4M * (3 + 1 + 3 + 1) * 4B * 2 = 224MB
-//		* buffer for culled particle positions (1)			4M * 3 * 4B = 96MB
-//															= 544MB 
-// Counters													~= 0
-//		* Atomic counter for culling (1 int)
-//															= 672MB
+//		* buffer for particle data (2)						4M * (3 + 1 + 3 + 1) * 4B * 2 = 256MB
+//		* buffer for culled particle positions (1)			4M * 3 * 4B = 48MB
+//															= 304MB 
+// Indirect drawing command buffers							~= 0
+//		* Cummand buffers (5)
+//															= 320MB
