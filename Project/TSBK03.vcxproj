@@ -364,8 +364,8 @@
     <None Include="src\shaders\prefixReduce.comp" />
     <None Include="src\shaders\prefixSpread.comp" />
     <None Include="src\shaders\sort.comp" />
-    <None Include="src\shaders\update.comp" />
-    <None Include="src\shaders\update2.comp" />
+    <None Include="src\shaders\updatePart.comp" />
+    <None Include="src\shaders\updateBin.comp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="resources\Ideas and TODO.txt" />

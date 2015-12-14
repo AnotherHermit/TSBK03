@@ -115,16 +115,10 @@
     <None Include="src\shaders\cull.comp">
       <Filter>Source Files\Shaders\Compute</Filter>
     </None>
-    <None Include="src\shaders\update.comp">
-      <Filter>Source Files\Shaders\Compute</Filter>
-    </None>
     <None Include="src\shaders\bin.comp">
       <Filter>Source Files\Shaders\Compute</Filter>
     </None>
     <None Include="src\shaders\sort.comp">
-      <Filter>Source Files\Shaders\Compute</Filter>
-    </None>
-    <None Include="src\shaders\update2.comp">
       <Filter>Source Files\Shaders\Compute</Filter>
     </None>
     <None Include="src\shaders\prefixSpread.comp">
@@ -134,6 +128,12 @@
       <Filter>Source Files\Shaders\Compute</Filter>
     </None>
     <None Include="src\shaders\prefixGather.comp">
+      <Filter>Source Files\Shaders\Compute</Filter>
+    </None>
+    <None Include="src\shaders\updatePart.comp">
+      <Filter>Source Files\Shaders\Compute</Filter>
+    </None>
+    <None Include="src\shaders\updateBin.comp">
       <Filter>Source Files\Shaders\Compute</Filter>
     </None>
   </ItemGroup>

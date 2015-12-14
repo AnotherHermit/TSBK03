@@ -43,7 +43,7 @@ private:
 	GLuint binBuffer;
 
 	// Others
-	bool doUpdate;
+	bool doUpdate, partUpdate;
 
 	// Methods
 	void SetParticleData();
@@ -54,7 +54,7 @@ private:
 	// Compute shader stuff
 	DrawElementsIndirectCommand drawIndCmd[4];
 	GLuint particleBuffers[3], binBuffers[3], drawIndBuffer;
-	GLuint computeBin, computePrefixGather, computePrefixReduce, computePrefixSpread, computeSort, computeUpdate, computeCull;
+	GLuint computeBin, computePrefixGather, computePrefixReduce, computePrefixSpread, computeSort, computeUpdatePart, computeUpdateBin, computeCull;
 	GLuint computeDrawParticles;
 	GLuint inBufferIndex, outBufferIndex;
 	GLuint prefixWorkGroups;
@@ -77,9 +77,11 @@ public:
 	void ComputePrefixSpread();
 	void ComputeSort();
 	void ComputeUpdate();
+	void ComputeUpdate2();
 	void ComputeCull();
 
 	void ToggleUpdate() { doUpdate = !doUpdate; }
+	void TogglePartUpdate() { partUpdate = !partUpdate; }
 
 	GLuint *GetParticlesPtr() { return &particles; }
 	GLuint *GetDrawParticlesPtr() { return &computeDrawParticles; }

@@ -7,7 +7,7 @@
 
 #version 430
 
-layout(local_size_x = 64) in;
+layout(local_size_x = 256) in;
 
 struct Particle {
 	vec3 position;
@@ -82,72 +82,74 @@ layout (std140, binding = 13) uniform BoidBuffer {
 	Boid boid;
 };
 
-Particle tempPart;
+Particle thisPart;
+Particle thatPart;
 
 void main() {
     uint currentParticle = gl_GlobalInvocationID.x;
 
 	// One global read
-	tempPart = particlesIn[currentParticle];
+	thisPart = particlesIn[currentParticle];
 
-    vec3 pos = tempPart.position;
-    vec3 vel = tempPart.velocity;
-	uint thisBin = tempPart.bin;
-	uint thisID = tempPart.ID;
+    vec3 thisPos = thisPart.position;
+    vec3 thisVel = thisPart.velocity;
+	uint thisBin = thisPart.bin;
+	uint thisID = thisPart.ID;
 
 	// Check that no particles escape!
-	if(pos.x < 0) {
-		vel.x = abs(vel.x);
+	if(thisPos.x < 0) {
+		thisVel.x = abs(thisVel.x);
 	}
-	if(pos.y < 0) {
-		vel.y = abs(vel.y);
+	if(thisPos.y < 0) {
+		thisVel.y = abs(thisVel.y);
 	}
-	if(pos.z < 0) {
-		vel.z = abs(vel.z);
+	if(thisPos.z < 0) {
+		thisVel.z = abs(thisVel.z);
 	}
-	if(pos.x > binInfo.areaSize) {
-		vel.x = -abs(vel.x);
+	if(thisPos.x > binInfo.areaSize) {
+		thisVel.x = -abs(thisVel.x);
 	}
-	if(pos.y > binInfo.areaSize) {
-		vel.y = -abs(vel.y);
+	if(thisPos.y > binInfo.areaSize) {
+		thisVel.y = -abs(thisVel.y);
 	}
-	if(pos.z > binInfo.areaSize) {
-		vel.z = -abs(vel.z);
+	if(thisPos.z > binInfo.areaSize) {
+		thisVel.z = -abs(thisVel.z);
 	}
 
-	// Calculate boid update for all boids in neighbouring bins
-	ivec3 pos2id = ivec3(min(max(floor(pos / binInfo.binSize), 0.0f), float(binInfo.bins - 1)));
-	ivec3 startID = ivec3(max(pos2id - 1, 0));
-	ivec3 endID = ivec3(min(pos2id + 1, binInfo.bins - 1));
-	vec3 thatPos, thatVel;
-	uint thatID, thatBin, thatIndex;
+	// Calculate indices to loop over
+	ivec3 pos2id = clamp(ivec3(floor(thisPos / binInfo.binSize)), 0, int(binInfo.bins) - 1);
+	ivec3 startID = max(pos2id - 1, 0);
+	ivec3 endID = min(pos2id + 1, int(binInfo.bins) - 1);
+
+	// Set some variables
+	uint thatIndex, thatBin, thoseBins;
 	float dist, scale;
 	uint matches = 0;
 	vec3 cohVec = vec3(0.0f), sepVec = vec3(0.0f), aliVec = vec3(0.0f), fearVec = vec3(0.0f);
 	vec3 dir;
 
+	// Calculate boid update for all boids in neighbouring bins
 	int x, y, z, ind;
 	for(z = startID.z; z <= endID.z; z++) {
 		for(y = startID.y; y <= endID.y; y++) {
 			for (x = startID.x; x <= endID.x; x++) {
 				thatBin = x + binInfo.bins * y + binInfo.bins * binInfo.bins * z;
 				thatIndex = prefixSum[thatBin];
-				for (ind = 0; ind < binCounter[thatBin]; ind++){
-					thatID = particlesIn[thatIndex + ind].ID;
-					thatPos = particlesIn[thatIndex + ind].position;
-					thatVel = particlesIn[thatIndex + ind].velocity;
-					dist = length(pos - thatPos);
+				thoseBins = binCounter[thatBin];
+				for (ind = 0; ind < thoseBins; ind++){
+					thatPart = particlesIn[thatIndex + ind];
+					dist = length(thisPos - thatPart.position);
 
-					if(thatID != thisID && dist < binInfo.binSize) {
+					if(thisID != thatPart.ID && dist < binInfo.binSize) {
 						matches++;
 
-						cohVec += thatPos;
+						cohVec += thatPart.position;
 						
 						scale = (dist - binInfo.binSize) / dist;
-						dir = normalize(thatPos - pos);
+						dir = normalize(thatPart.position - thisPos);
 						sepVec += dir * scale;
 						
-						dir = normalize(thatVel);
+						dir = normalize(thatPart.velocity);
 						aliVec += dir;
 					}
 				}
@@ -155,29 +157,29 @@ void main() {
 		}
 	}
 
-	dist = length(pos - cam.position);
+	dist = length(thisPos - cam.position);
 	if(dist < binInfo.binSize) {
 		scale = (dist - binInfo.binSize) / dist;
-		dir = normalize(cam.position - pos);
+		dir = normalize(cam.position - thisPos);
 		fearVec = normalize(dir * scale) * boid.fearWeight;
 	}
 
 	if(matches > 0){
 		cohVec /= float(matches);
-		cohVec -= pos;
+		cohVec -= thisPos;
 
 		cohVec = boid.cohWeight * normalize(cohVec);
 		sepVec = boid.sepWeight * normalize(sepVec);
 		aliVec = boid.aliWeight * normalize(aliVec);
-		vel = boid.preWeight * normalize(vel);
-		vel = prog.simSpeed * normalize(cohVec + sepVec + aliVec + fearVec + vel);
+		thisVel = boid.preWeight * normalize(thisVel);
+		thisVel = prog.simSpeed * normalize(cohVec + sepVec + aliVec + fearVec + thisVel);
 	}
 
-	tempPart.position = pos + vel * prog.deltaT; // Position update
-	tempPart.bin = thisBin; // Keep the bin of the particles
-	tempPart.velocity = vel; // Velocity update
-	tempPart.ID = thisID; // Keep the ID of the particles
+	thisPart.position = thisPos + thisVel * prog.deltaT; // Position update
+	thisPart.bin = thisBin; // Keep the bin of the particles
+	thisPart.velocity = thisVel; // Velocity update
+	thisPart.ID = thisID; // Keep the ID of the particles
 
     // Only one global write
-	particlesOut[currentParticle] = tempPart;
+	particlesOut[currentParticle] = thisPart;
 }

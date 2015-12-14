@@ -1,4 +1,8 @@
-//		Shader programs needed to perform flocking on GPU 
+///////////////////////////////////////
+//
+//		Compute shaders
+//
+///////////////////////////////////////
 
 // 1.	Calculate bin and increase bin counters (Comp Shader) #DONE
 //		Input: buffer with particles (1), cleared bin buffer (1)
@@ -30,10 +34,6 @@
 //		Work: Calculates if a particle has some part of the surface within the frustum
 //			otherwise it is not put in the output buffer.
 //		Output: Counter of the number of remaining particles, buffer of particle positions
-//		Idea: Cull the grid instead in a first pass and then only output the particles that belong to
-//			the non-culled grids.
-//		Idea: Cull the particles as they are about to be drawn (drop them in geometry shader)
-//			this means no data transfer back to CPU.
 
 // 6.	Draw particles (Billboards) (Vert+Geom+Frag Shader)	#DONE
 //		Input: Vertex array of points, radius
@@ -43,7 +43,11 @@
 //		Input: Model, vertex array of points
 //		Work: Instanced rendering of sphere model.
 
-
+///////////////////////////////////////
+//
+//		Memory necessary
+//
+///////////////////////////////////////
 
 // Needed buffers: 											Size:
 // Bins:													128*128*128 = 2M
@@ -55,6 +59,47 @@
 //		* buffer for particle data (2)						4M * (3 + 1 + 3 + 1) * 4B * 2 = 256MB
 //		* buffer for culled particle positions (1)			4M * 3 * 4B = 48MB
 //															= 304MB 
-// Indirect drawing command buffers							~= 0
-//		* Cummand buffers (5)
-//															= 320MB
+// Indirect drawing command buffers
+//		* command buffers (5)								~= 0M
+//
+// Uniform buffers for parameters							~= 0M
+//
+// Model buffers											
+//		* Positions											~= 0M
+//		* Normals											~= 0M
+//		* Indices											~= 0M
+//
+// Total:													~= 320MB
+
+///////////////////////////////////////
+//
+//		ToDo
+//
+///////////////////////////////////////
+
+// Tests
+//		* Clean up current tests
+//		* Make tests for more functions
+//		* Investigate more on the weird failed test bug (!)
+
+// Interoperability
+//		* Keep linux compability
+//		* Check that it works on laptop as well
+
+// Culling
+//		* Compute Indirect after bins are culled (?)
+//		* Cull on binds instead of independently
+
+// Update
+//		* Other examples of update functions
+//		* Optimize current flocking calculation
+
+// LoD 
+//		* Generelize to depend on .obj file read
+
+// Cleanup
+//		* Clean drawable model loading
+//		* Standardize init functions to always return bools
+
+// AntTweakbar
+//		* Selection of number of particles

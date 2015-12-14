@@ -25,6 +25,7 @@ Particles::Particles(GLuint numParticles, GLfloat initBinSize) {
 	numThreads = 256;
 
 	doUpdate = false;
+	partUpdate = true;
 
 	binParam.bins = setParticles;
 	binParam.totalBins = binParam.bins*binParam.bins*binParam.bins;
@@ -64,7 +65,8 @@ Particles::~Particles() {
 
 	glDeleteProgram(computeBin);
 	glDeleteProgram(computeSort);
-	glDeleteProgram(computeUpdate);
+	glDeleteProgram(computeUpdatePart);
+	glDeleteProgram(computeUpdateBin);
 	glDeleteProgram(computeCull);
 }
 
@@ -80,7 +82,8 @@ bool Particles::Init() {
 	isOk += CompileComputeShader(&computePrefixReduce, "src/shaders/prefixReduce.comp");
 	isOk += CompileComputeShader(&computePrefixSpread, "src/shaders/prefixSpread.comp");
 	isOk += CompileComputeShader(&computeSort, "src/shaders/sort.comp");
-	isOk += CompileComputeShader(&computeUpdate, "src/shaders/update.comp");
+	isOk += CompileComputeShader(&computeUpdatePart, "src/shaders/updatePart.comp");
+	isOk += CompileComputeShader(&computeUpdateBin, "src/shaders/updateBin.comp");
 	isOk += CompileComputeShader(&computeCull, "src/shaders/cull.comp");
 
 	InitBuffers();
@@ -253,7 +256,7 @@ void Particles::ComputeSort() {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 	glUseProgram(computeSort);
-	glDispatchCompute(particles / 64, 1, 1);
+	glDispatchCompute(particles / numThreads, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	printError("Do Compute: Sort");
@@ -261,8 +264,13 @@ void Particles::ComputeSort() {
 
 void Particles::ComputeUpdate() {
 	if (doUpdate) {
-		glUseProgram(computeUpdate);
-		glDispatchCompute(particles / 64, 1, 1);
+		if (partUpdate) {
+			glUseProgram(computeUpdatePart);
+			glDispatchCompute(particles / numThreads, 1, 1);
+		} else {
+			glUseProgram(computeUpdateBin);
+			glDispatchCompute(binParam.bins, binParam.bins, binParam.bins);	
+		}
 	} else {
 		std::swap(inBufferIndex, outBufferIndex);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, particleBuffers[inBufferIndex]);

@@ -1,0 +1,202 @@
+///////////////////////////////////////
+//
+//	Computer Graphics TSBK03
+//	Conrad Wahlén - conwa099
+//
+///////////////////////////////////////
+
+#version 430
+
+layout(local_size_x = 3, local_size_y = 3, local_size_z = 3) in;
+
+struct Particle {
+	vec3 position;
+	uint bin;
+	vec3 velocity;
+	uint ID;
+};
+
+struct Camera {
+	mat4 WTVmatrix;
+	mat4 VTPmatrix;
+	vec4 normals[8];
+	vec4 points[8];
+	vec3 position;
+	uint padding99;
+	vec4 lodLevels;
+};
+
+struct Bin {
+	uint bins;
+	uint totalBins;
+	float binSize;
+	float areaSize;
+};
+
+struct Program {
+	float currentT;
+	float deltaT;
+	float radius;
+	float simSpeed;
+};
+
+struct Boid {
+	float preWeight;
+	float cohWeight;
+	float sepWeight;
+	float aliWeight;
+	float fearWeight;
+};
+
+layout (std430, binding = 0) writeonly buffer ParticleBuffer1
+{
+    Particle particlesOut[];  
+};
+
+layout (std430, binding = 1) readonly buffer ParticleBuffer2
+{
+    Particle particlesIn[];  
+};
+
+layout (std430, binding = 3) readonly buffer BinCounterBuffer {
+	uint binCounter[];
+};
+
+layout (std430, binding = 4) readonly buffer PrefixSumBuffer {
+	uint prefixSum[];
+};
+
+layout (std140, binding = 10) uniform CameraBuffer {
+	Camera cam;
+};
+
+layout (std140, binding = 11) uniform BinBuffer {
+	Bin binInfo;
+};
+
+layout (std140, binding = 12) uniform ProgramBuffer {
+	Program prog;
+};
+
+layout (std140, binding = 13) uniform BoidBuffer {
+	Boid boid;
+};
+
+//shared Particle thesePart[300];
+
+shared uint binCount[27];
+shared uint binPrefix[27];
+
+uvec3 gtid;
+uint tid;
+uint globalBinID;
+
+Particle thisPart;
+Particle thatPart;
+
+float dist, scale;
+uint matches;
+vec3 cohVec, sepVec, aliVec, fearVec, dir;
+
+Particle calcFlocking(Particle thisPart) {
+	matches = 0;
+	cohVec = vec3(0);
+	sepVec = vec3(0);
+	aliVec = vec3(0);
+	fearVec = vec3(0);
+
+	for(uint bin = 0; bin < 27; bin++){
+		for(uint count = 0; count < binCount[bin]; count++) {
+			thatPart = particlesIn[binPrefix[bin] + count];
+			dist = length(thisPart.position - thatPart.position);
+
+			if(thisPart.ID != thatPart.ID && dist < binInfo.binSize) {
+				matches++;
+
+				cohVec += thatPart.position;
+						
+				scale = (dist - binInfo.binSize) / dist;
+				dir = normalize(thatPart.position - thisPart.position);
+				sepVec += dir * scale;
+						
+				dir = normalize(thatPart.velocity);
+				aliVec += dir;
+			}
+		}
+	}
+
+	dist = length(thisPart.position - cam.position);
+	if(dist < binInfo.binSize) {
+		scale = (dist - binInfo.binSize) / dist;
+		dir = normalize(cam.position - thisPart.position);
+		fearVec = normalize(dir * scale) * boid.fearWeight;
+	}
+
+	if(matches > 0){
+		cohVec /= float(matches);
+		cohVec -= thisPart.position;
+
+		cohVec = boid.cohWeight * normalize(cohVec);
+		sepVec = boid.sepWeight * normalize(sepVec);
+		aliVec = boid.aliWeight * normalize(aliVec);
+		thisPart.velocity = boid.preWeight * normalize(thisPart.velocity);
+		thisPart.velocity = prog.simSpeed * normalize(cohVec + sepVec + aliVec + fearVec + thisPart.velocity);
+	}
+
+	thisPart.position = thisPart.position + thisPart.velocity * prog.deltaT; // Position update
+	thisPart.bin = thisPart.bin; // Keep the bin of the particles
+	thisPart.velocity = thisPart.velocity; // Velocity update
+	thisPart.ID = thisPart.ID; // Keep the ID of the particles
+
+	return thisPart;
+}
+
+void calcBinNeighbours(uint thisBin) {
+	for(uint btid = tid; btid < binCount[thisBin] + 27; btid += 27){
+		if(btid < binCount[thisBin]) {
+			thisPart = particlesIn[binPrefix[thisBin] + btid];
+
+			// Check that no particles escape!
+			if(thisPart.position.x < 0) {
+				thisPart.velocity.x = abs(thisPart.velocity.x);
+			}
+			if(thisPart.position.y < 0) {
+				thisPart.velocity.y = abs(thisPart.velocity.y);
+			}
+			if(thisPart.position.z < 0) {
+				thisPart.velocity.z = abs(thisPart.velocity.z);
+			}
+			if(thisPart.position.x > binInfo.areaSize) {
+				thisPart.velocity.x = -abs(thisPart.velocity.x);
+			}
+			if(thisPart.position.y > binInfo.areaSize) {
+				thisPart.velocity.y = -abs(thisPart.velocity.y);
+			}
+			if(thisPart.position.z > binInfo.areaSize) {
+				thisPart.velocity.z = -abs(thisPart.velocity.z);
+			}
+
+			thisPart = calcFlocking(thisPart);
+			particlesOut[binPrefix[thisBin] + btid] = thisPart;
+		} 
+	}
+}
+
+void main() {
+	// Add two since we step two bins at a time in each direction
+    gtid = gl_WorkGroupID + (gl_LocalInvocationID - 1);
+	tid = gl_LocalInvocationIndex;
+
+	clamp(gtid, 0, binInfo.bins - 1);
+
+	if(tid < 27) {
+		globalBinID = gtid.x + gtid.y * binInfo.bins + gtid.z * binInfo.bins * binInfo.bins;
+
+		binCount[tid] = binCounter[globalBinID];
+		binPrefix[tid] = prefixSum[globalBinID];	
+	}		
+	
+	barrier(); // Wait for all to load the data to shared memory
+
+	calcBinNeighbours(13);
+}
