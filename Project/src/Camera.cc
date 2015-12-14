@@ -7,6 +7,8 @@
 
 #include "Camera.h"
 
+#include "GL_utilities.h"
+
 #include "gtc/matrix_transform.hpp"
 
 #include <iostream>
@@ -27,15 +29,9 @@ Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, glm:
 	winHeight = screenHeight;
 	param.lodLevels = inLodLevels;
 
-	glGenBuffers(1, &cameraBuffer);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 10, cameraBuffer);
-	glBindBuffer(GL_UNIFORM_BUFFER, cameraBuffer);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraParam), NULL, GL_STREAM_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	// Set starting WTVmatrix
 	SetFrustum();
-	UpdateCamera();
+	Update();
+	UpdateCullingBox();
 
 	cameraTwMembers[0] = {"Cam Pos x", TW_TYPE_FLOAT, offsetof(CameraParam, position.x), " readonly=true group=Info "};
 	cameraTwMembers[1] = {"Cam Pos y", TW_TYPE_FLOAT, offsetof(CameraParam, position.y), " readonly=true group=Info "};
@@ -45,6 +41,20 @@ Camera::Camera(glm::vec3 startpos, GLint* screenWidth, GLint* screenHeight, glm:
 	cameraTwMembers[5] = {"LOD 3 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.z), " min=0.0 max=2000.0 step=10.0 group=Controls "};
 	cameraTwMembers[6] = {"LOD 4 Dist", TW_TYPE_FLOAT, offsetof(CameraParam, lodLevels.w), " min=0.0 max=2000.0 step=10.0 group=Controls "};
 	cameraTwStruct = TwDefineStruct("Camera", cameraTwMembers, 7, sizeof(CameraParam), NULL, NULL);
+}
+
+bool Camera::Init() {
+	glGenBuffers(1, &cameraBuffer);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 10, cameraBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, cameraBuffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraParam), NULL, GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	// Set starting WTVmatrix
+	UploadParams();
+
+	printError("camera init");
+	return true;
 }
 
 void Camera::ResetCamera(glm::vec3 pos) {

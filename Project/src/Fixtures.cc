@@ -21,6 +21,11 @@ void ComputeTest::InitOpenGL() {
 	ASSERT_EQ(GLEW_OK, glewInit()) << "Failed to initialize GLEW";
 #endif
 
+	// Set up the AntBar
+	TwInit(TW_OPENGL_CORE, NULL);
+	TwWindowSize(100, 100);
+	antBar = TwNewBar("Particles");
+
 	CPUTimer = new Timer();
 	GPUTimer = new GLTimer();
 }
@@ -32,29 +37,30 @@ void ComputeTest::ExitOpenGL() {
 	if (GPUTimer != nullptr) {
 		delete(GPUTimer);
 	}
-
+	TwTerminate();
 	SDL_GL_DeleteContext(glcontext);
 	SDL_Quit();
 }
 
-// ===== Bun particles =====
+// ===== Bin particles =====
 
 void ComputeBin::SetUp() {
 	CPUBin = nullptr;
 
 	InitOpenGL();
 
-	GLuint particlesPerSide = *GetParam();
-	GLfloat binSize = 20.0f;
+	PartCount particlesPerSide = GetParam().numParticles;
+	GLuint binCount = GetParam().numBins;
+	GLfloat binSize = GetParam().binSize;
 
-	parts = new Particles(particlesPerSide, binSize);
+	parts = new Particles(particlesPerSide, binCount, binSize);
 	ASSERT_TRUE(parts->Init());
 
-	CPUBin = (GLint*)malloc(sizeof(GLint) * Particles::MAX_BINS);
-	memset(CPUBin, 0, sizeof(GLint) * Particles::MAX_BINS);
+	CPUBin = (GLint*)malloc(sizeof(GLint) * MAX_BINS);
+	memset(CPUBin, 0, sizeof(GLint) * MAX_BINS);
 
-	CPUPrefix = (GLint*)malloc(sizeof(GLint) * Particles::MAX_BINS);
-	memset(CPUPrefix, 0, sizeof(GLint) * Particles::MAX_BINS);
+	CPUPrefix = (GLint*)malloc(sizeof(GLint) * MAX_BINS);
+	memset(CPUPrefix, 0, sizeof(GLint) * MAX_BINS);
 
 	glFinish();
 }
@@ -80,7 +86,7 @@ void ComputeBin::CPUSolution() {
 	GLuint bin;
 
 	for (size_t i = 0; i < parts->GetParticles(); i++) {
-		pos = parts->GetParticleData()[i].position / 20.0f;
+		pos = parts->GetParticleData()[i].position / parts->GetBinSize();
 		bin = (GLuint)floor(pos.x) + (GLuint)floor(pos.y) * parts->GetBins() + (GLuint)floor(pos.z) * parts->GetBins() * parts->GetBins();
 		
 		parts->GetParticleData()[i].bin = bin;
@@ -105,14 +111,15 @@ void ComputePrefix::SetUp() {
 	TempBin = nullptr;
 	InitOpenGL();
 
-	GLuint particlesPerSide = *GetParam();
-	GLfloat binSize = 20.0f;
+	PartCount particlesPerSide = GetParam().numParticles;
+	GLuint binCount = GetParam().numBins;
+	GLfloat binSize = GetParam().binSize;
 
-	parts = new Particles(particlesPerSide, binSize);
+	parts = new Particles(particlesPerSide, binCount, binSize);
 	ASSERT_TRUE(parts->Init());
 
-	CPUBin = (GLint*)malloc(sizeof(GLint) * Particles::MAX_BINS);
-	memset(CPUBin, 0, sizeof(GLint) * Particles::MAX_BINS);
+	CPUBin = (GLint*)malloc(sizeof(GLint) * MAX_BINS);
+	memset(CPUBin, 0, sizeof(GLint) * MAX_BINS);
 	TempBin = (GLint*)malloc(sizeof(GLint) * 1024);
 	memset(TempBin, 0, sizeof(GLint) * 1024);
 

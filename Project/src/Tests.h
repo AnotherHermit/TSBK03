@@ -8,12 +8,17 @@
 #ifndef TESTS_H
 #define TESTS_H
 
+#include <gtest/gtest.h>
+
+#include "Particles.h"
 #include "GL_utilities.h"
 
-GLint NumParticles[] = { 48, 48, 56, 56, 64 }; // Should only work for multiples of 256 (binning)
-//GLint NumParticles[] = {128, 128, 128, 128, 128};
-//GLint NumParticles[] = {16, 16, 16, 16, 16};
-//GLint NumParticles[] = {8, 8, 8, 8, 8};
-//GLint NumParticles[] = {4, 4, 4, 4, 4};
+class myTestCase {
+public:
+	myTestCase(PartCount v1, GLuint v2, GLfloat v3);
+	PartCount numParticles;
+	GLuint numBins; // Should be a multiple of 16
+	GLfloat binSize; 
+};
 
 #endif // TESTS_H

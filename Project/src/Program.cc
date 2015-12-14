@@ -18,7 +18,7 @@ Program::Program() {
 	screen = NULL;
 	glcontext = NULL;
 	cam = NULL;
-	particleSystem = NULL;
+	parts = NULL;
 
 	// Window init size
 	winWidth = 800;
@@ -29,6 +29,17 @@ Program::Program() {
 
 	// Time init
 	time.startTimer();
+
+	// Set program parameters
+	param.radius = 1.0f;
+	param.simulationSpeed = 30.0f;
+
+	cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
+	cameraLODLevels = glm::vec4(1000.0f, 400.0f, 70.0f, 20.0f);
+
+	particlesPerSide = COUNT0;
+	binsPerSide = 16;
+	binSize = 60.0f;
 }
 
 int Program::Execute() {
@@ -87,68 +98,47 @@ bool Program::Init() {
 
 	printError("after wrapper inits");
 
-	// Set up the AntBar
-	TwInit(TW_OPENGL_CORE, NULL);
-	TwWindowSize(winWidth, winWidth);
-	antBar = TwNewBar("Particles");
-	TwDefine(" Particles refresh=0.1 ");
-	TwDefine(" Particles size='270 350' ");
-	TwDefine(" Particles help='This program simulates flocking behaviour of lots of particles in 3D.\n"
-			 "The simulation is started/paused by pressing SPACE.' ");
-
-	printError("after AntBar init");
-
-	// Set program parameters
-	param.radius = 1.0f;
-	param.simulationSpeed = 30.0f;
-
-	glm::vec3 cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
-	glm::vec4 cameraLODLevels = glm::vec4(500.0f, 250.0f, 70.0f, 20.0f);
-
-	GLuint particlesPerSide = 128;
-	GLfloat binSize = 20.0f;
-
-	// Set up the camera
-	cam = new Camera(cameraStartPos, &winWidth, &winHeight, cameraLODLevels);
-
-	printError("after camera init");
-
-	// Set up particle system
-	particleSystem = new Particles(particlesPerSide, binSize);
-	if (!particleSystem->Init()) {
-		return false;
-	}
-
-	printError("after particle system init");
-
-	// Set up boids
-	boid = new Boid();
-
-	// Set up different models to render
-	spheres = new Sphere();
-	spheres->Init(particleSystem->GetCullBuffer(), particleSystem->GetDrawCommandBuffer());
-
-	printError("after models init");
-	
 	glGenBuffers(1, &programBuffer);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 12, programBuffer);
-
 	glBindBuffer(GL_UNIFORM_BUFFER, programBuffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(ProgramStruct), &param, GL_STREAM_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	printError("after setting program params");
-	
-	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, " group=Info ");
-	TwAddVarRW(antBar, "Sim Speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls  ");
+	// Set up the AntBar
+	TwInit(TW_OPENGL_CORE, NULL);
+	TwWindowSize(winWidth, winWidth);
+	antBar = TwNewBar("Particles");
+	TwDefine(" Particles refresh=0.1 size='300 420' valueswidth=140 ");
+	TwDefine(" Particles help='This program simulates flocking behaviour of lots of particles in 3D.\n"
+			 "The simulation is started/paused by pressing SPACE.' ");
 
-	TwAddVarRW(antBar, "Cam Speed", TW_TYPE_FLOAT, cam->GetSpeedPtr(), " min=0 max=200 step=10 group=Controls ");
+	// Set up the camera
+	cam = new Camera(cameraStartPos, &winWidth, &winHeight, cameraLODLevels);
+	if (!cam->Init()) return false;
+	
+	// Set up particle system
+	parts = new Particles(particlesPerSide, binsPerSide, binSize);
+	if (!parts->Init()) return false;
+
+	// Set up boids
+	boid = new Boid();
+	if (!boid->Init()) return false;
+
+	// Set up different models to render
+	spheres = new Sphere(parts->GetCullBuffer(), parts->GetDrawCommandBuffer());
+	if(!spheres->Init("resources/Spheres-flat.obj")) return false;
+
+	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, " group=Info ");
+	TwAddVarRW(antBar, "Sim Speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls ");
+	TwAddVarRW(antBar, "Cam Speed", TW_TYPE_FLOAT, cam->GetSpeedPtr(), " min=0 max=500 step=10 group=Controls ");
 	TwAddVarRW(antBar, "Cam Rot Speed", TW_TYPE_FLOAT, cam->GetRotSpeedPtr(), " min=0.0 max=0.010 step=0.001 group=Controls ");
 	TwAddVarCB(antBar, "Camera", cam->GetCameraTwType(), cam->SetLODCB, cam->GetCamParamsCB, cam, " opened=true ");
-
-	TwAddVarCB(antBar, "Boids", boid->GetBoidTwType(), boid->SetBoidCB, boid->GetBoidParamsCB, boid, " opened=true " );
-
+	TwAddVarCB(antBar, "Boids", boid->GetBoidTwType(), boid->SetBoidCB, boid->GetBoidParamsCB, boid, " opened=true ");
+	TwAddVarCB(antBar, "Particles", parts->GetParticlesTwType(), parts->SetParticleCB, parts->GetParticleCB, parts, " group='Particle Controls' ");
+	TwAddVarRO(antBar, "Particle count", TW_TYPE_UINT32, parts->GetParticlePtr(), " group=Info ");
+	TwAddVarCB(antBar, "Bins", parts->GetBinTwType(), parts->SetBinCB, parts->GetBinCB, parts, " opened=true ");
 	TwDefine(" Particles/'Boid Controls' group=Controls");
+	TwDefine(" Particles/'Particle Controls' group=Controls");
 
 	// Check if AntTweak Setup is ok
 	if (TwGetLastError() != NULL) {
@@ -156,6 +146,51 @@ bool Program::Init() {
 	}
 
 	return true;
+}
+
+
+
+void Program::Update() {
+	// Upload program params (incl time update)
+	UploadParams();
+
+	// Update the camera
+	cam->UpdateCamera();
+	
+	// Update the particles
+	parts->DoCompute();
+
+	printError("after update");
+}
+
+void Program::Render() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
+	spheres->Draw();
+
+	TwDraw();
+
+	printError("after display");
+
+	SDL_GL_SwapWindow(screen);
+}
+
+void Program::Clean() {
+	glDeleteBuffers(1, &programBuffer);
+	TwTerminate();
+	SDL_GL_DeleteContext(glcontext);
+	SDL_Quit();
+}
+
+void Program::UploadParams() {
+	// Update program parameters
+	glBindBuffer(GL_UNIFORM_BUFFER, programBuffer);
+	glBufferSubData(GL_UNIFORM_BUFFER, NULL, sizeof(ProgramStruct), &param);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	printError("program param upload");
 }
 
 void Program::OnEvent(SDL_Event *Event) {
@@ -197,20 +232,14 @@ void Program::OnKeypress(SDL_Event *Event) {
 		isRunning = false;
 		break;
 	case SDLK_SPACE:
-		particleSystem->ToggleUpdate();
+		parts->ToggleUpdate();
 		break;
 	case SDLK_t:
-		particleSystem->TogglePartUpdate();
-		break;
-	case SDLK_1:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() - 4);
-		break;
-	case SDLK_2:
-		particleSystem->SetParticles(particleSystem->GetSetParticles() + 4);
-		break;
+		parts->TogglePartUpdate();
+		break;/*
 	case SDLK_r:
-		particleSystem->SetParticles(particleSystem->GetSetParticles());
-		break;
+		parts->SetParticles(parts->GetParticles());
+		break;*/
 	case SDLK_f:
 		cam->TogglePause();
 		SDL_SetRelativeMouseMode(SDL_GetRelativeMouseMode() ? SDL_FALSE : SDL_TRUE);
@@ -223,6 +252,7 @@ void Program::OnKeypress(SDL_Event *Event) {
 		} else {
 			TwDefine(" Particles iconified=true ");
 		}
+		break;
 	default:
 		break;
 	}
@@ -255,39 +285,4 @@ void Program::CheckKeyDowns() {
 	if (keystate[SDL_SCANCODE_E]) {
 		cam->MoveUp(-param.deltaT);
 	}
-}
-
-void Program::Update() {
-	// Update program parameters
-	glBindBuffer(GL_UNIFORM_BUFFER, programBuffer);
-	glBufferSubData(GL_UNIFORM_BUFFER, NULL, sizeof(ProgramStruct), &param);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	// Update the camera
-	cam->UpdateCamera();
-	
-	// Update the particles
-	particleSystem->DoCompute();
-
-	printError("after update");
-}
-
-void Program::Render() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-
-	spheres->Draw();
-
-	TwDraw();
-
-	printError("after display");
-
-	SDL_GL_SwapWindow(screen);
-}
-
-void Program::Clean() {
-	TwTerminate();
-	SDL_GL_DeleteContext(glcontext);
-	SDL_Quit();
 }

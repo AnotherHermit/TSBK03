@@ -17,20 +17,9 @@
 #include "glm.hpp"
 
 
-
-// ===== myDrawable base class =====
-
-class myDrawable {
-public:
-	myDrawable() {}
-	
-	virtual bool Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) = 0;
-	virtual void Draw() = 0;
-};
-
 // ===== Sphere class =====
 
-class Sphere : public myDrawable {
+class Sphere {
 protected:
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
@@ -40,11 +29,13 @@ protected:
 	GLuint cullBuffer, drawBuffers[3], drawCmdBuffer;
 	GLuint drawVAO;
 
-public:
-	Sphere();
+	bool loadModels(const char* path);
 
-	virtual bool Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer);
-	virtual void Draw();
+public:
+	Sphere(GLuint inCullBuffer, GLuint inDrawCmdBuffer);
+
+	bool Init(const char* path);
+	void Draw();
 };
 
 #endif // myDrawable_H

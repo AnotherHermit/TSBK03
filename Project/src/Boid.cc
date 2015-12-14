@@ -7,18 +7,14 @@
 
 #include "Boid.h"
 
+#include "GL_utilities.h"
+
 Boid::Boid() {
 	param.previous = 1.0f;
-	param.cohesion = 0.03f;
-	param.separation = 0.03f;
-	param.alignment = 0.03f;
+	param.cohesion = 0.10f;
+	param.separation = 0.15f;
+	param.alignment = 0.12f;
 	param.fear = 0.30f;
-
-	glGenBuffers(1, &boidBuffer);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 13, boidBuffer);
-	glBindBuffer(GL_UNIFORM_BUFFER, boidBuffer);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(BoidStruct), &param, GL_STREAM_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	boidTwMembers[0] = { "Previous", TW_TYPE_FLOAT, offsetof(BoidStruct, previous), " min=0.0 max=1.0 step=0.01 group='Boid Controls' "};
 	boidTwMembers[1] = { "Cohesion", TW_TYPE_FLOAT, offsetof(BoidStruct, cohesion), " min=0.0 max=1.0 step=0.01 group='Boid Controls' "};
@@ -26,6 +22,17 @@ Boid::Boid() {
 	boidTwMembers[3] = { "Alignment", TW_TYPE_FLOAT, offsetof(BoidStruct, alignment), " min=0.0 max=1.0 step=0.01 group='Boid Controls' "};
 	boidTwMembers[4] = { "Fear", TW_TYPE_FLOAT, offsetof(BoidStruct, fear), " min=0.0 max=1.0 step=0.01 group='Boid Controls' "};
 	boidTwStruct = TwDefineStruct("Boids", boidTwMembers, 5, sizeof(BoidStruct), NULL, NULL);
+}
+
+bool Boid::Init() {
+	glGenBuffers(1, &boidBuffer);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 13, boidBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, boidBuffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(BoidStruct), &param, GL_STREAM_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	printError("camera init");
+	return true;
 }
 
 void Boid::Update() {

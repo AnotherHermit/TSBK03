@@ -17,25 +17,37 @@
 
 #include <iostream>
 
-Sphere::Sphere()
-	: myDrawable() {
-	program = -1;
-}
-
-bool Sphere::Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
+Sphere::Sphere(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
 	cullBuffer = inCullBuffer;
 	drawCmdBuffer = inDrawCmdBuffer;
+}
 
+bool Sphere::loadModels(const char* path) {
 	// Load models
 	std::string err;
-	bool wasLoaded = tinyobj::LoadObj(shapes, materials, err, "resources/Spheres-smooth.obj");
+	bool wasLoaded = tinyobj::LoadObj(shapes, materials, err, path);
 	if (!wasLoaded || !err.empty()) {
 		std::cerr << err << std::endl;
+		return false;
 	}
+	std::cout << "Loaded following models: " << std::endl;
 	for (size_t i = 0; i < shapes.size(); i++) {
-		printf("shape[%zd].name = %s\n", i, shapes[i].name.c_str());
+		printf("Model (LoD %zd): %s\n", i, shapes[i].name.c_str());
 	}
+	return true;
+}
 
+bool Sphere::Init(const char* path) {
+	if (!loadModels(path)) return false;
+
+	// Load shaders
+	program = loadShaders("src/shaders/particle.vert", "src/shaders/particle.frag");
+
+	// Create buffers
+	glGenVertexArrays(1, &drawVAO);
+	glGenBuffers(3, drawBuffers);
+
+	// Initialize Indirect drawing commands
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, drawCmdBuffer);
 	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 4 * sizeof(DrawElementsIndirectCommand), &drawIndCmd);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -54,10 +66,7 @@ bool Sphere::Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, 4 * sizeof(DrawElementsIndirectCommand), &drawIndCmd);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-	// Create buffers
-	glGenVertexArrays(1, &drawVAO);
-	glGenBuffers(3, drawBuffers);
-
+	// Allocate enough memory for instanced drawing buffers
 	glBindBuffer(GL_ARRAY_BUFFER, drawBuffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * vertexOffset * 3, NULL, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -70,7 +79,7 @@ bool Sphere::Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint) * indexOffset, NULL, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-
+	// Fill the instanced drawing buffers with data from models
 	glBindBuffer(GL_ARRAY_BUFFER, drawBuffers[0]);
 	for (size_t i = 0; i < useShapes; i++) {
 		glBufferSubData(GL_ARRAY_BUFFER, sizeof(GLfloat) * drawIndCmd[i].baseVertex * 3, sizeof(GLfloat) * shapes[i].mesh.positions.size(), shapes[i].mesh.positions.data());
@@ -89,10 +98,8 @@ bool Sphere::Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
 	}
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-	// Load shaders
-	program = loadShaders("src/shaders/particle.vert", "src/shaders/particle.frag");
+	// Set the GPU pointers for drawing 
 	glUseProgram(program);
-
 	glBindVertexArray(drawVAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, cullBuffer);
@@ -117,10 +124,9 @@ bool Sphere::Init(GLuint inCullBuffer, GLuint inDrawCmdBuffer) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawBuffers[2]);
 
 	glBindVertexArray(0);
-
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	
-	printError("Init Sphere");
+	printError("init Sphere");
 	return true;
 }
 

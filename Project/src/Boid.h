@@ -46,10 +46,10 @@ private:
 public:
 	Boid();
 
+	bool Init();
 	void Update();
 
 	TwType GetBoidTwType() { return boidTwStruct; }
-	BoidStruct* GetBoidStructPtr() { return &param; }
 
 	/// @brief Used by AntTweakBar to set which texture to use
 	static void TW_CALL SetBoidCB(const void* value, void* clientData);

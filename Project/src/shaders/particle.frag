@@ -54,7 +54,7 @@ void main()
 	vec3 rgbColor = hsv2rgb(hsvColor);
 	
 	// Calculate diffuse light
-	vec3 light = mat3(cam.WTVmatrix) * vec3(0, 1, 0);
+	vec3 light = mat3(cam.WTVmatrix) * vec3(0.707, 0.707, 0);
 	float shade = max(dot(normalize(exNormal), light), 0.1);
 	vec3 shadedColor = rgbColor * shade;
 	

@@ -70,6 +70,8 @@ private:
 
 public:
 	Camera(glm::vec3 startpos, GLint *screenWidth, GLint *screenHeight, glm::vec4 inLodLevels);
+	bool Init();
+
 	void SetFrustum();
 	void ResetCamera(glm::vec3 pos);
 

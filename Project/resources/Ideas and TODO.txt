@@ -80,7 +80,6 @@
 // Tests
 //		* Clean up current tests
 //		* Make tests for more functions
-//		* Investigate more on the weird failed test bug (!)
 
 // Interoperability
 //		* Keep linux compability
@@ -88,18 +87,17 @@
 
 // Culling
 //		* Compute Indirect after bins are culled (?)
-//		* Cull on binds instead of independently
+//		* Cull on bins instead of independently
 
 // Update
 //		* Other examples of update functions
 //		* Optimize current flocking calculation
 
 // LoD 
-//		* Generelize to depend on .obj file read
+//		* Generalize to depend on .obj file read
 
-// Cleanup
-//		* Clean drawable model loading
-//		* Standardize init functions to always return bools
+// Lights
+//		* Generalize lights and move to drawable
 
-// AntTweakbar
-//		* Selection of number of particles
+// Buffers
+//		* Try again with single allocation of buffers (very strange errors)

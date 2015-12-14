@@ -8,7 +8,7 @@
 #ifndef FIXTURES_H
 #define FIXTURES_H
 
-#include <gtest/gtest.h>
+#include "Tests.h"
 
 #include "Particles.h"
 
@@ -16,13 +16,15 @@
 
 #include <vector>
 
-class ComputeTest : public ::testing::TestWithParam<const int*> {
+class ComputeTest : public ::testing::TestWithParam<myTestCase> {
 protected:
 	SDL_Window* screen;
 	SDL_GLContext glcontext;
 
 	Timer* CPUTimer;
 	GLTimer* GPUTimer;
+
+	TwBar *antBar;
 
 	void InitOpenGL();
 	void ExitOpenGL();

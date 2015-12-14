@@ -54,13 +54,22 @@ private:
 	GLuint programBuffer;
 
 	Boid *boid;
-	Particles *particleSystem;
+	Particles *parts;
 	Camera *cam;
 	TwBar *antBar;
 
 	// Drawing stuff
-	myDrawable *spheres;
+	Sphere* spheres;
 
+	// Program params
+	glm::vec3 cameraStartPos;
+	glm::vec4 cameraLODLevels;
+	PartCount particlesPerSide;
+	GLuint binsPerSide;
+	GLfloat binSize;
+
+	// Methods
+	void UploadParams();
 
 public:
 	Program();
