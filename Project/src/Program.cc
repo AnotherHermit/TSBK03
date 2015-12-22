@@ -126,7 +126,7 @@ bool Program::Init() {
 
 	// Set up different models to render
 	spheres = new Sphere(parts->GetCullBuffer(), parts->GetDrawCommandBuffer());
-	if(!spheres->Init("resources/Spheres-flat.obj")) return false;
+	if(!spheres->Init("resources/Spheres-smooth.obj")) return false;
 
 	TwAddVarRO(antBar, "FPS", TW_TYPE_FLOAT, &FPS, " group=Info ");
 	TwAddVarRW(antBar, "Sim Speed", TW_TYPE_FLOAT, &param.simulationSpeed, " min=0 max=200 step=5 group=Controls ");
