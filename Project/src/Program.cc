@@ -14,7 +14,7 @@
 
 
 Program::Program() {
-	// Set alla pointers to null
+	// Set all pointers to null
 	screen = NULL;
 	glcontext = NULL;
 	cam = NULL;
@@ -32,7 +32,7 @@ Program::Program() {
 
 	// Set program parameters
 	param.radius = 1.0f;
-	param.simulationSpeed = 30.0f;
+	param.simulationSpeed = 100.0f;
 
 	cameraStartPos = glm::vec3(-100.0, 100.0, -100.0);
 	cameraLODLevels = glm::vec4(1000.0f, 400.0f, 70.0f, 20.0f);
@@ -44,7 +44,7 @@ Program::Program() {
 
 int Program::Execute() {
 	if (!Init()) {
-		std::cout << "\nInit failed. Press enter to quit..." << std::endl;
+		std::cout << "\nInit failed. Press enter to quit ..." << std::endl;
 		getchar();
 		return -1;
 	}
@@ -137,13 +137,11 @@ bool Program::Init() {
 	TwAddVarCB(antBar, "Particles", parts->GetParticlesTwType(), parts->SetParticleCB, parts->GetParticleCB, parts, " group='Particle Controls' ");
 	TwAddVarRO(antBar, "Particle count", TW_TYPE_UINT32, parts->GetParticlePtr(), " group=Info ");
 	TwAddVarCB(antBar, "Bins", parts->GetBinTwType(), parts->SetBinCB, parts->GetBinCB, parts, " opened=true ");
-	TwDefine(" Particles/'Boid Controls' group=Controls");
-	TwDefine(" Particles/'Particle Controls' group=Controls");
+	TwDefine(" Particles/'Boid Controls' group=Controls ");
+	TwDefine(" Particles/'Particle Controls' group=Controls ");
 
 	// Check if AntTweak Setup is ok
-	if (TwGetLastError() != NULL) {
-		return false;
-	}
+	if (TwGetLastError() != NULL) return false;
 
 	return true;
 }
@@ -236,10 +234,7 @@ void Program::OnKeypress(SDL_Event *Event) {
 		break;
 	case SDLK_t:
 		parts->TogglePartUpdate();
-		break;/*
-	case SDLK_r:
-		parts->SetParticles(parts->GetParticles());
-		break;*/
+		break;
 	case SDLK_f:
 		cam->TogglePause();
 		SDL_SetRelativeMouseMode(SDL_GetRelativeMouseMode() ? SDL_FALSE : SDL_TRUE);

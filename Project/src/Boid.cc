@@ -11,9 +11,9 @@
 
 Boid::Boid() {
 	param.previous = 1.0f;
-	param.cohesion = 0.10f;
-	param.separation = 0.15f;
-	param.alignment = 0.12f;
+	param.cohesion = 0.18f;
+	param.separation = 0.26f;
+	param.alignment = 0.25f;
 	param.fear = 0.30f;
 
 	boidTwMembers[0] = { "Previous", TW_TYPE_FLOAT, offsetof(BoidStruct, previous), " min=0.0 max=1.0 step=0.01 group='Boid Controls' "};

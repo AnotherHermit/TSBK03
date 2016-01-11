@@ -183,7 +183,6 @@ void calcBinNeighbours(uint thisBin) {
 }
 
 void main() {
-	// Add two since we step two bins at a time in each direction
     gtid = gl_WorkGroupID + (gl_LocalInvocationID - 1);
 	tid = gl_LocalInvocationIndex;
 
